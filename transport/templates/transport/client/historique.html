@@ -1,0 +1,25 @@
+{% extends "transport/base.html" %}
+{% block title %}Historique{% endblock %}
+{% block content %}
+<h2>Historique</h2>
+<p><a class="chip" href="{% url 'client_commandes' %}" style="background:transparent;">← Mes commandes</a></p>
+
+<table>
+  <thead>
+    <tr><th>Réf</th><th>Statut</th><th>Origine</th><th>Destination</th><th>Dernière maj</th></tr>
+  </thead>
+  <tbody>
+    {% for e in expeditions %}
+      <tr>
+        <td><a href="{% url 'client_commande_detail' e.reference %}">{{ e.reference }}</a></td>
+        <td><span class="badge">{{ e.get_statut_display }}</span></td>
+        <td>{{ e.origine }}</td>
+        <td>{{ e.destination }}</td>
+        <td>{{ e.date_maj }}</td>
+      </tr>
+    {% empty %}
+      <tr><td colspan="5">Aucun historique.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

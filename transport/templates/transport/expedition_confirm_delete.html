@@ -1,0 +1,10 @@
+{% extends "transport/base.html" %}
+{% block title %}Supprimer{% endblock %}
+{% block content %}
+<p>Supprimer l’expédition <b>{{ object.reference }}</b> ?</p>
+<form method="post">
+  {% csrf_token %}
+  <button type="submit">Oui, supprimer</button>
+  <a href="{% url 'expedition_list' %}">Annuler</a>
+</form>
+{% endblock %}

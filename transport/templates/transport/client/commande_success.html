@@ -1,0 +1,8 @@
+{% extends "transport/base.html" %}
+{% block title %}Commande créée{% endblock %}
+{% block content %}
+<h2>✅ Commande enregistrée</h2>
+<p>Votre référence : <span class="badge">{{ expedition.reference }}</span></p>
+<p><a class="chip" href="{% url 'client_commande_detail' expedition.reference %}">Suivre la commande</a>
+<a class="chip" href="{% url 'client_commandes' %}" style="background:transparent;">Retour</a></p>
+{% endblock %}

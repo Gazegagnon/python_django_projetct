@@ -1,0 +1,13 @@
+{% extends "transport/base.html" %}
+{% block title %}Planifier livraison{% endblock %}
+{% block content %}
+<h2>Planifier livraison</h2>
+<p class="muted">Expédition : <b>{{ expedition.reference }}</b></p>
+
+<form method="post">
+  {% csrf_token %}
+  {{ form.as_p }}
+  <button type="submit">Planifier</button>
+  <a class="chip" href="{% url 'expedition_detail' expedition.pk %}" style="background:transparent;">Annuler</a>
+</form>
+{% endblock %}

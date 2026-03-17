@@ -1,0 +1,31 @@
+{% extends "transport/base.html" %}
+{% block title %}Suivi expédition{% endblock %}
+
+{% block content %}
+<h2>Suivi d'expédition</h2>
+
+<form method="get">
+    <input type="text" name="reference" placeholder="EXP-2026-0001" value="{{ reference }}">
+    <button type="submit">Rechercher</button>
+</form>
+
+{% if expedition %}
+    <h3>Expédition {{ expedition.reference }}</h3>
+    <p><b>Statut actuel :</b> {{ expedition.get_statut_display }}</p>
+    <p><b>Origine :</b> {{ expedition.origine }}</p>
+    <p><b>Destination :</b> {{ expedition.destination }}</p>
+
+    <h4>Historique</h4>
+    <ul>
+        {% for e in events %}
+            <li>
+                {{ e.date_event }} — {{ e.get_statut_display }}
+                {% if e.commentaire %} ({{ e.commentaire }}) {% endif %}
+            </li>
+        {% empty %}
+            <li>Aucun événement enregistré.</li>
+        {% endfor %}
+    </ul>
+{% endif %}
+
+{% endblock %}

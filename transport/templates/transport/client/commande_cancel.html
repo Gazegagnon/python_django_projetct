@@ -1,0 +1,16 @@
+{% extends "transport/base.html" %}
+{% block title %}Annuler {{ expedition.reference }}{% endblock %}
+{% block content %}
+<h2>Annuler la commande {{ expedition.reference }}</h2>
+<p class="muted">Annulation possible uniquement si le statut est “En attente”.</p>
+
+<form method="post">
+  {% csrf_token %}
+  <p>
+    <label>Raison (optionnel)</label><br>
+    <input name="raison_annulation" placeholder="Ex: erreur d’adresse, changement de plan…" />
+  </p>
+  <button type="submit">Confirmer l’annulation</button>
+  <a class="chip" href="{% url 'client_commande_detail' expedition.reference %}" style="background:transparent;">Retour</a>
+</form>
+{% endblock %}

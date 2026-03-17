@@ -1,0 +1,10 @@
+{% extends "transport/base.html" %}
+{% block title %}Déconnexion{% endblock %}
+{% block content %}
+<h2>Déconnecté</h2>
+<p class="muted">Vous êtes maintenant déconnecté.</p>
+<p>
+  <a class="chip" href="{% url 'login' %}">Se reconnecter</a>
+  <a class="chip" href="{% url 'home' %}" style="background:transparent;">Retour à l’accueil</a>
+</p>
+{% endblock %}

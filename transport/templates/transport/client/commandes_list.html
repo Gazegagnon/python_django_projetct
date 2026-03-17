@@ -1,0 +1,38 @@
+{% extends "transport/base.html" %}
+{% block title %}Mes commandes{% endblock %}
+{% block content %}
+<h2>Mes commandes</h2>
+
+<p><a class="chip" href="{% url 'client_commande_create' %}">➕ Nouvelle commande</a>
+<a class="chip" href="{% url 'client_historique' %}" style="background:transparent;">📁 Historique</a></p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Réf</th><th>Statut</th><th>Origine</th><th>Destination</th><th>Programmée</th><th>Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for e in expeditions %}
+      <tr>
+        <td><a href="{% url 'client_commande_detail' e.reference %}">{{ e.reference }}</a></td>
+        <td><span class="badge">{{ e.get_statut_display }}</span></td>
+        <td>{{ e.origine }}</td>
+        <td>{{ e.destination }}</td>
+        <td>{% if e.planifiee_pour %}<span class="badge">{{ e.planifiee_pour }}</span>{% else %}Immédiate{% endif %}</td>
+        <td>
+          <a href="{% url 'client_commande_detail' e.reference %}">Voir</a>
+          {% if e.statut == "EN_ATTENTE" %}
+            · <a href="{% url 'client_commande_update' e.reference %}">Modifier</a>
+            · <a href="{% url 'client_commande_cancel' e.reference %}">Annuler</a>
+          {% elif e.statut == "EN_COURS" %}
+            · <a href="{% url 'client_commande_update' e.reference %}">Instructions</a>
+          {% endif %}
+        </td>
+      </tr>
+    {% empty %}
+      <tr><td colspan="6">Aucune commande.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

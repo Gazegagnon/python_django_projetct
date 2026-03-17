@@ -1,0 +1,48 @@
+{% extends "transport/base.html" %}
+{% block title %}Expéditions{% endblock %}
+{% block content %}
+
+<div class="row">
+  <form method="get" class="row" style="flex:1;">
+    <input type="text" name="q" placeholder="Rechercher par référence..." value="{{ request.GET.q }}">
+    <select name="statut">
+      <option value="">Tous les statuts</option>
+      {% for key,label in expeditions.model.Statut.choices %}
+        <option value="{{ key }}" {% if request.GET.statut == key %}selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+    <button type="submit">Filtrer</button>
+  </form>
+
+  <a href="{% url 'expedition_create' %}">➕ Nouvelle expédition</a>
+</div>
+
+<br>
+
+<table>
+  <thead>
+    <tr>
+      <th>Réf</th><th>Statut</th><th>Client</th><th>Origine</th><th>Destination</th><th>Poids</th><th>Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+  {% for e in expeditions %}
+    <tr>
+      <td><a href="{% url 'expedition_detail' e.pk %}">{{ e.reference }}</a></td>
+      <td>{{ e.get_statut_display }}</td>
+      <td>{{ e.client_nom }}</td>
+      <td>{{ e.origine }}</td>
+      <td>{{ e.destination }}</td>
+      <td>{{ e.poids_kg }} kg</td>
+      <td class="actions">
+        <a href="{% url 'expedition_update' e.pk %}">✏️ Modifier</a>
+        <a href="{% url 'expedition_delete' e.pk %}">🗑 Supprimer</a>
+      </td>
+    </tr>
+  {% empty %}
+    <tr><td colspan="7">Aucune expédition.</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+
+{% endblock %}

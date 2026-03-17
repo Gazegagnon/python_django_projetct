@@ -1,0 +1,10 @@
+{% extends "transport/base.html" %}
+{% block title %}Formulaire expédition{% endblock %}
+{% block content %}
+<form method="post">
+  {% csrf_token %}
+  {{ form.as_p }}
+  <button type="submit">Enregistrer</button>
+  <a href="{% url 'expedition_list' %}">Annuler</a>
+</form>
+{% endblock %}

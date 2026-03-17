@@ -1,0 +1,12 @@
+{% extends "transport/base.html" %}
+{% block title %}Commande{% endblock %}
+{% block content %}
+<h2>{% if expedition %}Modifier la commande{% else %}Nouvelle commande{% endif %}</h2>
+
+<form method="post">
+  {% csrf_token %}
+  {{ form.as_p }}
+  <button type="submit">Enregistrer</button>
+  <a class="chip" href="{% url 'client_commandes' %}" style="background:transparent;">Annuler</a>
+</form>
+{% endblock %}

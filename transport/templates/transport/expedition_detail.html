@@ -1,0 +1,33 @@
+{% extends "transport/base.html" %}
+{% block title %}Détails {{ expedition.reference }}{% endblock %}
+{% block content %}
+{% if user.is_staff %}
+  <hr style="border:none;border-top:1px solid var(--line); margin:16px 0;">
+  <h3>Actions livraison</h3>
+
+  {% if expedition.livraison %}
+    <p class="muted">Véhicule: {{ expedition.livraison.vehicule.immatriculation }} · Statut livraison: {{ expedition.livraison.get_statut_display }}</p>
+
+    <a class="chip" href="{% url 'livraison_start' expedition.pk %}">▶️ Démarrer</a>
+    <a class="chip" href="{% url 'livraison_finish' expedition.pk %}" style="background:transparent;">✅ Terminer</a>
+  {% else %}
+    <p class="muted">Aucune livraison planifiée.</p>
+    <a class="chip" href="{% url 'planifier_livraison' expedition.pk %}">🚚 Planifier livraison</a>
+    <a class="chip" href="{% url 'livraison_demo_position' expedition.pk %}">📍 Position demo</a>
+  {% endif %}
+{% endif %}
+<p><b>Référence :</b> {{ expedition.reference }}</p>
+<p><b>Statut :</b> {{ expedition.get_statut_display }}</p>
+<p><b>Client :</b> {{ expedition.client_nom }} ({{ expedition.client_email }})</p>
+<p><b>Origine :</b> {{ expedition.origine }}</p>
+<p><b>Destination :</b> {{ expedition.destination }}</p>
+<p><b>Poids :</b> {{ expedition.poids_kg }} kg</p>
+<p><b>Description :</b> {{ expedition.description|default:"—" }}</p>
+<p><b>Créée le :</b> {{ expedition.date_creation }}</p>
+<p><b>Mise à jour :</b> {{ expedition.date_maj }}</p>
+<div class="actions">
+    <a class="chip" href="{% url 'planifier_livraison' expedition.pk %}">🚚 Planifier livraison</a>
+    <a href="{% url 'expedition_update' expedition.pk %}">✏️ Modifier</a>
+    <a href="{% url 'expedition_delete' expedition.pk %}">🗑 Supprimer</a>
+</div>
+{% endblock %}
