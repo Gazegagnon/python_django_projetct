@@ -1,0 +1,90 @@
+{% extends "transport/base.html" %}
+{% block title %}Véhicules · Transport Console{% endblock %}
+
+{% block breadcrumb %}
+<nav class="breadcrumb" aria-label="Fil d'Ariane">
+  <a href="{% url 'home' %}">Accueil</a>
+  <span class="breadcrumb__sep">/</span>
+  <span>Véhicules</span>
+</nav>
+{% endblock %}
+
+{% block content %}
+{% include "transport/_staff_nav.html" with staff_section="vehicules" %}
+
+<div class="page-header">
+  <div>
+    <h2 class="page-header__title">🚛 Parc véhicules</h2>
+    <div class="page-header__sub">
+      {{ counts.disponible }} disponible{{ counts.disponible|pluralize }} ·
+      {{ counts.en_mission }} en mission ·
+      {{ counts.maintenance }} maintenance
+    </div>
+  </div>
+  <a class="btn" href="{% url 'vehicule_create' %}">+ Nouveau véhicule</a>
+</div>
+
+<form method="get" class="card mb-16">
+  <div class="row">
+    <input type="search" name="q" value="{{ current_q }}" placeholder="Immatriculation…" style="max-width:220px;">
+    <select name="statut" onchange="this.form.submit()" style="max-width:180px;">
+      <option value="">Tous statuts</option>
+      {% for val, label in statut_choices %}
+        <option value="{{ val }}" {% if current_statut == val %}selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+    <button type="submit" class="btn btn--sm">Filtrer</button>
+  </div>
+</form>
+
+{% if counts.disponible == 0 and counts.total > 0 %}
+<div class="alert alert--warning mb-16">
+  <span>⚠️</span>
+  <span>Aucun véhicule <b>Disponible</b>. Les véhicules « En mission » peuvent être libérés s'ils n'ont plus de livraison active.</span>
+</div>
+{% elif counts.total == 0 %}
+<div class="alert alert--warning mb-16">
+  <span>⚠️</span>
+  <span>Aucun véhicule enregistré. <a href="{% url 'vehicule_create' %}">Créez votre premier véhicule</a> pour planifier des livraisons.</span>
+</div>
+{% endif %}
+
+<div class="table-wrap card">
+  <table>
+    <thead>
+      <tr>
+        <th>Immatriculation</th><th>Marque / Modèle</th><th>Capacité</th>
+        <th>Statut</th><th>Livraisons</th><th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for v in vehicules %}
+      <tr>
+        <td><b>{{ v.immatriculation }}</b></td>
+        <td>{{ v.marque|default:"—" }} {{ v.modele }}</td>
+        <td>{% if v.capacite_kg %}{{ v.capacite_kg }} kg{% else %}—{% endif %}</td>
+        <td>
+          {% if v.statut == "DISPONIBLE" %}<span class="badge badge--good">Disponible</span>
+          {% elif v.statut == "EN_MISSION" %}<span class="badge badge--info">En mission</span>
+          {% else %}<span class="badge badge--warn">Maintenance</span>{% endif %}
+        </td>
+        <td>{{ v.nb_livraisons }}</td>
+        <td class="actions">
+          <a class="btn btn--sm btn--ghost" href="{% url 'vehicule_update' v.pk %}">Modifier</a>
+          {% if v.statut == "EN_MISSION" and not v.livraison_active %}
+          <form method="post" action="{% url 'vehicule_release' v.pk %}" style="display:inline;">
+            {% csrf_token %}
+            <button type="submit" class="btn btn--sm" data-confirm="Remettre ce véhicule disponible ?">Libérer</button>
+          </form>
+          {% endif %}
+        </td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="6"><div class="empty">Aucun véhicule trouvé.</div></td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{% include "transport/_pagination.html" %}
+{% endblock %}

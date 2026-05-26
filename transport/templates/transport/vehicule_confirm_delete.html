@@ -1,0 +1,16 @@
+{% extends "transport/base.html" %}
+{% block title %}Supprimer {{ vehicule.immatriculation }}{% endblock %}
+
+{% block content %}
+{% include "transport/_staff_nav.html" with staff_section="vehicules" %}
+
+<div class="card card--bad">
+  <h2 class="page-header__title">Supprimer {{ vehicule.immatriculation }} ?</h2>
+  <p class="muted mt-8">Cette action est irréversible.</p>
+  <form method="post" class="actions mt-24">
+    {% csrf_token %}
+    <button type="submit" class="btn btn--danger">Confirmer la suppression</button>
+    <a class="btn btn--ghost" href="{% url 'vehicule_list' %}">Annuler</a>
+  </form>
+</div>
+{% endblock %}

@@ -1,0 +1,20 @@
+{% if events %}
+<ul class="timeline mt-8">
+  {% for ev in events %}
+    <li class="timeline__item">
+      <span class="timeline__dot"></span>
+      <div>
+        <div>
+          {% include "transport/_statut_badge.html" with statut=ev.statut label=ev.get_statut_display %}
+          <span class="muted" style="margin-left:6px;">{{ ev.date_event|date:"d/m/Y H:i" }}</span>
+        </div>
+        {% if ev.commentaire %}
+          <div style="margin-top:4px;">{{ ev.commentaire }}</div>
+        {% endif %}
+      </div>
+    </li>
+  {% endfor %}
+</ul>
+{% else %}
+<p class="muted">Aucun événement enregistré.</p>
+{% endif %}

@@ -11,6 +11,12 @@
 </nav>
 {% endblock %}
 
+{% block extra_head %}
+  {% if expedition.livraison %}
+    {% include "transport/_leaflet_assets.html" %}
+  {% endif %}
+{% endblock %}
+
 {% block content %}
 <div class="page-header">
   <div>
@@ -26,40 +32,20 @@
 </div>
 
 <div class="grid grid-2" style="align-items:start;">
-
   <section class="card">
     <h3 class="card__title">📋 Informations</h3>
     <dl class="dl-grid mt-8">
       <dt>Client</dt>
-      <dd>{{ expedition.client_nom }}<br><span class="muted">{{ expedition.client_email }}</span></dd>
-
-      <dt>Origine</dt>
-      <dd>{{ expedition.origine }}</dd>
-
-      <dt>Destination</dt>
-      <dd>{{ expedition.destination }}</dd>
-
-      <dt>Type de colis</dt>
-      <dd>{{ expedition.get_type_colis_display }}</dd>
-
-      <dt>Poids</dt>
-      <dd>{{ expedition.poids_kg }} kg</dd>
-
+      <dd>{{ expedition.client_nom|default:"—" }}<br><span class="muted">{{ expedition.client_email|default:"—" }}</span></dd>
+      <dt>Origine</dt><dd>{{ expedition.origine|default:"—" }}</dd>
+      <dt>Destination</dt><dd>{{ expedition.destination|default:"—" }}</dd>
+      <dt>Type de colis</dt><dd>{{ expedition.get_type_colis_display }}</dd>
+      <dt>Poids</dt><dd>{% if expedition.poids_kg %}{{ expedition.poids_kg }} kg{% else %}—{% endif %}</dd>
       <dt>Date cible</dt>
-      <dd>
-        {% if expedition.date_cible %}
-          {{ expedition.date_cible|date:"d/m/Y" }}
-        {% else %}
-          <span class="muted">Non définie</span>
-        {% endif %}
-      </dd>
-
-      <dt>Description</dt>
-      <dd>{{ expedition.description|default:"—"|linebreaksbr }}</dd>
-
+      <dd>{% if expedition.date_cible %}{{ expedition.date_cible|date:"d/m/Y" }}{% else %}<span class="muted">Non définie</span>{% endif %}</dd>
+      <dt>Description</dt><dd>{{ expedition.description|default:"—"|linebreaksbr }}</dd>
       {% if expedition.statut == "ANNULEE" and expedition.raison_annulation %}
-        <dt>Raison annulation</dt>
-        <dd>{{ expedition.raison_annulation }}</dd>
+        <dt>Raison annulation</dt><dd>{{ expedition.raison_annulation }}</dd>
       {% endif %}
     </dl>
   </section>
@@ -68,84 +54,65 @@
     <h3 class="card__title">🚚 Livraison</h3>
     {% if expedition.livraison %}
       <dl class="dl-grid mt-8">
-        <dt>Véhicule</dt>
-        <dd>{{ expedition.livraison.vehicule.immatriculation }}</dd>
-        <dt>Statut</dt>
-        <dd>{{ expedition.livraison.get_statut_display }}</dd>
-        {% if expedition.livraison.date_depart %}
-          <dt>Départ</dt>
-          <dd>{{ expedition.livraison.date_depart|date:"d/m/Y H:i" }}</dd>
-        {% endif %}
-        {% if expedition.livraison.date_arrivee %}
-          <dt>Arrivée</dt>
-          <dd>{{ expedition.livraison.date_arrivee|date:"d/m/Y H:i" }}</dd>
-        {% endif %}
-        {% if expedition.livraison.lat and expedition.livraison.lng %}
-          <dt>Position</dt>
-          <dd>
-            {{ expedition.livraison.lat }}, {{ expedition.livraison.lng }}<br>
-            <span class="muted">MAJ : {{ expedition.livraison.position_maj|date:"d/m/Y H:i:s" }}</span>
-          </dd>
-        {% endif %}
+        <dt>Véhicule</dt><dd>{{ expedition.livraison.vehicule.immatriculation }}</dd>
+        <dt>Statut</dt><dd>{{ expedition.livraison.get_statut_display }}</dd>
+        {% if expedition.livraison.date_depart %}<dt>Départ</dt><dd>{{ expedition.livraison.date_depart|date:"d/m/Y H:i" }}</dd>{% endif %}
+        {% if expedition.livraison.date_arrivee %}<dt>Arrivée</dt><dd>{{ expedition.livraison.date_arrivee|date:"d/m/Y H:i" }}</dd>{% endif %}
       </dl>
-
       <hr>
-
       <div class="actions">
-        {% if expedition.livraison.statut != "TERMINEE" %}
-          <form method="post" action="{% url 'livraison_start' expedition.pk %}" style="display:inline;">
+        {% if expedition.livraison.statut != "TERMINEE" and expedition.livraison.statut != "ANNULEE" %}
+          <form method="post" action="{% url 'livraison_start' expedition.pk %}" style="display:inline;" data-loading>
             {% csrf_token %}
-            <button type="submit" class="btn btn--good btn--sm">▶️ Démarrer</button>
+            <button type="submit" class="btn btn--good btn--sm" data-confirm="Démarrer la livraison ?">▶️ Démarrer</button>
           </form>
-          <form method="post" action="{% url 'livraison_finish' expedition.pk %}" style="display:inline;">
+          <form method="post" action="{% url 'livraison_finish' expedition.pk %}" style="display:inline;" data-loading>
             {% csrf_token %}
-            <button type="submit" class="btn btn--sm">✅ Terminer</button>
+            <button type="submit" class="btn btn--sm" data-confirm="Confirmer la fin de livraison ?">✅ Terminer</button>
           </form>
-          <form method="post" action="{% url 'livraison_demo_position' expedition.pk %}" style="display:inline;">
+          <form method="post" action="{% url 'livraison_demo_position' expedition.pk %}" style="display:inline;" data-loading>
             {% csrf_token %}
             <button type="submit" class="btn btn--ghost btn--sm">📍 Position demo</button>
           </form>
         {% else %}
-          <span class="badge badge--good">Livraison terminée</span>
+          <span class="badge">{{ expedition.livraison.get_statut_display }}</span>
+          {% if expedition.statut == "EN_ATTENTE" or expedition.statut == "EN_COURS" %}
+            <a class="btn btn--sm mt-8" href="{% url 'planifier_livraison' expedition.pk %}">🔄 Replanifier</a>
+          {% endif %}
         {% endif %}
       </div>
     {% else %}
       <div class="empty">
         <div class="empty__icon">🅿️</div>
-        <p>Aucune livraison planifiée pour cette expédition.</p>
+        <p>Aucune livraison planifiée.</p>
         <a class="btn" href="{% url 'planifier_livraison' expedition.pk %}">🚚 Planifier une livraison</a>
       </div>
     {% endif %}
   </section>
 </div>
 
+{% if expedition.livraison %}
+<section class="card mt-24">
+  <h3 class="card__title">📍 Suivi GPS</h3>
+  <div id="staff-map" class="map mt-8" aria-label="Carte de suivi staff"></div>
+  <p class="muted mt-8" id="staff-pos-info">Chargement de la position…</p>
+</section>
+{% endif %}
+
 <section class="card mt-24">
   <h3 class="card__title">🕓 Historique</h3>
-  {% if events %}
-    <ul class="timeline mt-8">
-      {% for ev in events %}
-        <li class="timeline__item">
-          <span class="timeline__dot"></span>
-          <div>
-            <div>
-              {% include "transport/_statut_badge.html" with statut=ev.statut label=ev.get_statut_display %}
-              <span class="muted" style="margin-left:6px;">{{ ev.date_event|date:"d/m/Y H:i" }}</span>
-            </div>
-            {% if ev.commentaire %}
-              <div style="margin-top:4px;">{{ ev.commentaire }}</div>
-            {% endif %}
-          </div>
-        </li>
-      {% endfor %}
-    </ul>
-  {% else %}
-    <p class="muted">Aucun événement enregistré.</p>
-  {% endif %}
+  {% include "transport/_timeline.html" with events=events %}
 </section>
 
 <div class="actions mt-24">
   <a class="btn btn--ghost" href="{% url 'expedition_list' %}">← Retour à la liste</a>
   <a class="btn" href="{% url 'expedition_update' expedition.pk %}">✏️ Modifier</a>
-  <a class="btn btn--danger" href="{% url 'expedition_delete' expedition.pk %}">🗑 Supprimer</a>
+  <a class="btn btn--danger" href="{% url 'expedition_delete' expedition.pk %}" data-confirm="Supprimer définitivement cette expédition ?">🗑 Supprimer</a>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+  {% if expedition.livraison %}
+    {% include "transport/_position_tracker_script.html" with position_url=position_url map_id="staff-map" info_id="staff-pos-info" %}
+  {% endif %}
 {% endblock %}

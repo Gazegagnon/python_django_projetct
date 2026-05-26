@@ -128,6 +128,14 @@ USE_TZ = True
 # Fichiers statiques
 # ---------------------------------------------------------------------------
 STATIC_URL = "static/"
+STATIC_ROOT = BASE_DIR / "staticfiles"
+
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+        "LOCATION": "transport-cache",
+    }
+}
 
 
 # ---------------------------------------------------------------------------

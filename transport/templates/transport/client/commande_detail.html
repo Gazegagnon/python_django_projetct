@@ -11,18 +11,13 @@
 </nav>
 {% endblock %}
 
-{% block extra_head %}
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-      integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
-{% endblock %}
+{% block extra_head %}{% include "transport/_leaflet_assets.html" %}{% endblock %}
 
 {% block content %}
 <div class="page-header">
   <div>
     <h2 class="page-header__title">Commande {{ expedition.reference }}</h2>
-    <div class="page-header__sub">
-      Créée le {{ expedition.date_creation|date:"d/m/Y H:i" }}
-    </div>
+    <div class="page-header__sub">Créée le {{ expedition.date_creation|date:"d/m/Y H:i" }}</div>
   </div>
   <div>
     {% include "transport/_statut_badge.html" with statut=expedition.statut label=expedition.get_statut_display %}
@@ -35,41 +30,21 @@
     <dl class="dl-grid mt-8">
       <dt>Départ</dt>
       <dd>{{ expedition.pickup_adresse|default:"—" }}<br><span class="muted">{{ expedition.origine }}</span></dd>
-
       <dt>Destination</dt>
       <dd>{{ expedition.dropoff_adresse|default:"—" }}<br><span class="muted">{{ expedition.destination }}</span></dd>
-
-      <dt>Type de colis</dt>
-      <dd>{{ expedition.get_type_colis_display }}</dd>
-
-      <dt>Poids</dt>
-      <dd>{{ expedition.poids_kg }} kg</dd>
-
+      <dt>Type</dt><dd>{{ expedition.get_type_colis_display }}</dd>
+      <dt>Poids</dt><dd>{% if expedition.poids_kg %}{{ expedition.poids_kg }} kg{% else %}—{% endif %}</dd>
       <dt>Programmée</dt>
-      <dd>
-        {% if expedition.planifiee_pour %}
-          {{ expedition.planifiee_pour|date:"d/m/Y H:i" }}
-        {% else %}
-          <span class="muted">Immédiate</span>
-        {% endif %}
-      </dd>
-
-      <dt>Instructions</dt>
-      <dd>{{ expedition.instructions|default:"—"|linebreaksbr }}</dd>
-
-      {% if expedition.statut == "ANNULEE" and expedition.raison_annulation %}
-        <dt>Raison annulation</dt>
-        <dd>{{ expedition.raison_annulation }}</dd>
-      {% endif %}
+      <dd>{% if expedition.planifiee_pour %}{{ expedition.planifiee_pour|date:"d/m/Y H:i" }}{% else %}<span class="muted">Immédiate</span>{% endif %}</dd>
+      <dt>Instructions</dt><dd>{{ expedition.instructions|default:"—"|linebreaksbr }}</dd>
     </dl>
-
     <hr>
     <div class="actions">
       {% if expedition.statut == "EN_ATTENTE" %}
         <a class="btn btn--sm" href="{% url 'client_commande_update' expedition.reference %}">✏️ Modifier</a>
         <a class="btn btn--danger btn--sm" href="{% url 'client_commande_cancel' expedition.reference %}">⛔ Annuler</a>
       {% elif expedition.statut == "EN_COURS" %}
-        <a class="btn btn--sm" href="{% url 'client_commande_update' expedition.reference %}">✉️ Modifier les instructions</a>
+        <a class="btn btn--sm" href="{% url 'client_commande_update' expedition.reference %}">✉️ Modifier instructions</a>
       {% else %}
         <span class="muted">Cette commande n'est plus modifiable.</span>
       {% endif %}
@@ -85,27 +60,47 @@
 
 <section class="card mt-24">
   <h3 class="card__title">🕓 Historique</h3>
-  {% if events %}
-    <ul class="timeline mt-8">
-      {% for ev in events %}
-        <li class="timeline__item">
-          <span class="timeline__dot"></span>
-          <div>
-            <div>
-              {% include "transport/_statut_badge.html" with statut=ev.statut label=ev.get_statut_display %}
-              <span class="muted" style="margin-left:6px;">{{ ev.date_event|date:"d/m/Y H:i" }}</span>
-            </div>
-            {% if ev.commentaire %}
-              <div style="margin-top:4px;">{{ ev.commentaire }}</div>
-            {% endif %}
-          </div>
-        </li>
-      {% endfor %}
-    </ul>
-  {% else %}
-    <p class="muted">Aucun événement enregistré.</p>
-  {% endif %}
+  {% include "transport/_timeline.html" with events=events %}
 </section>
+
+<section class="card mt-24">
+  <h3 class="card__title">💬 Contacter l'équipe</h3>
+  <form method="post" action="{% url 'client_commande_message' expedition.reference %}">
+    {% csrf_token %}
+    <div class="form-row">
+      <label for="id_sujet">Sujet</label>
+      {{ message_form.sujet }}
+    </div>
+    <div class="form-row">
+      <label for="id_corps">Message</label>
+      {{ message_form.corps }}
+    </div>
+    <button type="submit" class="btn btn--sm mt-8">Envoyer</button>
+  </form>
+</section>
+
+{% if expedition.statut == "LIVREE" and not has_avis %}
+<section class="card mt-24">
+  <h3 class="card__title">⭐ Votre avis</h3>
+  <form method="post" action="{% url 'client_commande_avis' expedition.reference %}">
+    {% csrf_token %}
+    <div class="form-row">
+      <label for="id_note">Note (1 à 5)</label>
+      {{ avis_form.note }}
+    </div>
+    <div class="form-row">
+      <label for="id_commentaire">Commentaire</label>
+      {{ avis_form.commentaire }}
+    </div>
+    <button type="submit" class="btn btn--sm mt-8">Publier l'avis</button>
+  </form>
+</section>
+{% elif has_avis %}
+<section class="card mt-24">
+  <h3 class="card__title">⭐ Votre avis</h3>
+  <p>{{ expedition.avis.note }}/5 — {{ expedition.avis.commentaire|default:"Sans commentaire" }}</p>
+</section>
+{% endif %}
 
 <div class="actions mt-24">
   <a class="btn btn--ghost" href="{% url 'client_commandes' %}">← Mes commandes</a>
@@ -113,50 +108,5 @@
 {% endblock %}
 
 {% block extra_js %}
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
-        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
-<script>
-(function () {
-  const url = "{% url 'expedition_position' expedition.reference %}";
-  const defaultLatLng = [48.8566, 2.3522];
-
-  const map = L.map("map").setView(defaultLatLng, 12);
-  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-    maxZoom: 19,
-    attribution: "&copy; OpenStreetMap"
-  }).addTo(map);
-
-  const marker = L.marker(defaultLatLng).addTo(map);
-  const info = document.getElementById("pos-info");
-  let timer = null;
-
-  async function refresh() {
-    try {
-      const res = await fetch(url, { headers: { "X-Requested-With": "fetch" } });
-      if (!res.ok) throw new Error("HTTP " + res.status);
-      const data = await res.json();
-
-      if (!data.has_position) {
-        info.textContent = "Position non disponible (livraison non démarrée ou pas encore assignée).";
-        return;
-      }
-
-      const latlng = [data.lat, data.lng];
-      marker.setLatLng(latlng);
-      map.setView(latlng, map.getZoom());
-      info.textContent = "Dernière mise à jour : " + (data.updated_at || "—") + " · Statut : " + data.statut;
-
-      if (data.statut === "LIVREE" && timer) {
-        clearInterval(timer);
-        timer = null;
-      }
-    } catch (e) {
-      info.textContent = "Impossible de charger la position.";
-    }
-  }
-
-  refresh();
-  timer = setInterval(refresh, 5000);
-})();
-</script>
+  {% include "transport/_position_tracker_script.html" with position_url=position_url map_id="map" info_id="pos-info" %}
 {% endblock %}

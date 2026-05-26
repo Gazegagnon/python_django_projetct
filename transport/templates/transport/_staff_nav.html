@@ -1,0 +1,9 @@
+{% if user.is_staff %}
+<nav class="staff-nav mb-16" aria-label="Navigation staff">
+  <a class="chip {% if staff_section == 'overview' %}chip--primary{% endif %}" href="{% url 'dashboard_overview' %}">📊 Vue d'ensemble</a>
+  <a class="chip {% if staff_section == 'alertes' %}chip--primary{% endif %}" href="{% url 'dashboard_alertes' %}">⚠️ Alertes</a>
+  <a class="chip {% if staff_section == 'activite' %}chip--primary{% endif %}" href="{% url 'dashboard_activite' %}">📈 Activité</a>
+  <a class="chip {% if staff_section == 'expeditions' %}chip--primary{% endif %}" href="{% url 'expedition_list' %}">📦 Expéditions</a>
+  <a class="chip {% if staff_section == 'vehicules' %}chip--primary{% endif %}" href="{% url 'vehicule_list' %}">🚛 Véhicules</a>
+</nav>
+{% endif %}

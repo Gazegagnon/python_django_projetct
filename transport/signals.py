@@ -7,6 +7,7 @@ from django.dispatch import receiver
 
 from .models import TrackingEvent
 from .notifications import notify_status_change
+from .services import should_notify_tracking_event
 
 logger = logging.getLogger(__name__)
 
@@ -15,6 +16,8 @@ logger = logging.getLogger(__name__)
 def send_email_on_tracking_event(sender, instance: TrackingEvent, created, **kwargs):
     """Notifie le client à chaque nouvel événement de tracking."""
     if not created:
+        return
+    if not should_notify_tracking_event(instance):
         return
     expedition = instance.expedition
     try:

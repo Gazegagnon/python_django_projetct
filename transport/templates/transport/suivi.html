@@ -33,7 +33,7 @@
   </div>
 </form>
 
-{% if reference and not expedition %}
+{% if not_found %}
   <div class="alert alert--warning">
     <span>⚠️</span>
     <span>Aucune expédition trouvée pour la référence <b>{{ reference }}</b>.</span>
@@ -62,26 +62,7 @@
 
     <section class="card">
       <h3 class="card__title">🕓 Historique</h3>
-      {% if events %}
-        <ul class="timeline mt-8">
-          {% for ev in events %}
-            <li class="timeline__item">
-              <span class="timeline__dot"></span>
-              <div>
-                <div>
-                  {% include "transport/_statut_badge.html" with statut=ev.statut label=ev.get_statut_display %}
-                  <span class="muted" style="margin-left:6px;">{{ ev.date_event|date:"d/m/Y H:i" }}</span>
-                </div>
-                {% if ev.commentaire %}
-                  <div style="margin-top:4px;">{{ ev.commentaire }}</div>
-                {% endif %}
-              </div>
-            </li>
-          {% endfor %}
-        </ul>
-      {% else %}
-        <p class="muted">Aucun événement enregistré.</p>
-      {% endif %}
+      {% include "transport/_timeline.html" with events=events %}
     </section>
   </div>
 {% endif %}

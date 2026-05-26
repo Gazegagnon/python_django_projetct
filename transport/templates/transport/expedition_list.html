@@ -10,6 +10,8 @@
 {% endblock %}
 
 {% block content %}
+{% include "transport/_staff_nav.html" with staff_section="expeditions" %}
+
 <div class="page-header">
   <div>
     <h2 class="page-header__title">📦 Expéditions</h2>
@@ -17,13 +19,16 @@
       {{ page_obj.paginator.count }} expédition{{ page_obj.paginator.count|pluralize }} au total
     </div>
   </div>
-  <a class="btn" href="{% url 'expedition_create' %}">➕ Nouvelle expédition</a>
+  <div class="actions">
+    <a class="btn btn--ghost" href="{% url 'expedition_export_csv' %}?q={{ current_q|urlencode }}&statut={{ current_statut|urlencode }}">⬇ Export CSV</a>
+    <a class="btn" href="{% url 'expedition_create' %}">➕ Nouvelle expédition</a>
+  </div>
 </div>
 
 <form method="get" class="card mb-16" role="search">
   <div class="form-grid">
     <div class="form-row">
-      <label for="id_q">Recherche par référence</label>
+      <label for="id_q">Recherche (réf, client, email, origine, destination)</label>
       <input type="text" id="id_q" name="q" value="{{ current_q }}" placeholder="Ex : EXP-2026-0001">
     </div>
     <div class="form-row">

@@ -24,7 +24,7 @@ def notify_status_change(expedition, event) -> bool:
     recipient = expedition.client_email or (
         expedition.client_user.email if expedition.client_user_id else ""
     )
-    if not recipient:
+    if not recipient or recipient == "client@transport.com":
         return False
 
     subject = f"[Transport] {expedition.reference} — {event.get_statut_display()}"

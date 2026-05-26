@@ -1,0 +1,50 @@
+{% extends "transport/base.html" %}
+{% block title %}Notifications{% endblock %}
+
+{% block breadcrumb %}
+<nav class="breadcrumb" aria-label="Fil d'Ariane">
+  <a href="{% url 'home' %}">Accueil</a>
+  <span class="breadcrumb__sep">/</span>
+  <span>Notifications</span>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="page-header row row--between">
+  <div>
+    <h2 class="page-header__title">🔔 Mes notifications</h2>
+    <div class="page-header__sub">{{ unread_count }} non lue{{ unread_count|pluralize }}</div>
+  </div>
+  {% if unread_count %}
+  <form method="post" action="{% url 'notifications_mark_all_read' %}">
+    {% csrf_token %}
+    <button type="submit" class="btn btn--ghost btn--sm">Tout marquer comme lu</button>
+  </form>
+  {% endif %}
+</div>
+
+<div class="stack">
+  {% for n in notifications %}
+  <article class="card {% if not n.lu %}card--highlight{% endif %}">
+    <div class="row row--between">
+      <div>
+        <div class="badge">{{ n.get_categorie_display }}</div>
+        <h3 class="card__title mt-8">{{ n.titre }}</h3>
+        <p class="muted mt-8">{{ n.message }}</p>
+        <div class="muted mt-8" style="font-size:12px;">{{ n.date_creation|date:"d/m/Y H:i" }}</div>
+      </div>
+      {% if not n.lu %}
+      <form method="post" action="{% url 'notification_mark_read' n.pk %}">
+        {% csrf_token %}
+        <button type="submit" class="btn btn--sm">Marquer lu{% if n.lien %} &amp; ouvrir{% endif %}</button>
+      </form>
+      {% elif n.lien %}
+      <a class="btn btn--sm btn--ghost" href="{{ n.lien }}">Ouvrir</a>
+      {% endif %}
+    </div>
+  </article>
+  {% empty %}
+  <div class="empty card">Aucune notification pour le moment.</div>
+  {% endfor %}
+</div>
+{% endblock %}

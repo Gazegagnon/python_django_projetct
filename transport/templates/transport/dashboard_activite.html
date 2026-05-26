@@ -1,0 +1,62 @@
+{% extends "transport/base.html" %}
+{% block title %}Activité · Dashboard{% endblock %}
+
+{% block breadcrumb %}
+<nav class="breadcrumb" aria-label="Fil d'Ariane">
+  <a href="{% url 'home' %}">Accueil</a>
+  <span class="breadcrumb__sep">/</span>
+  <a href="{% url 'dashboard_overview' %}">Dashboard</a>
+  <span class="breadcrumb__sep">/</span>
+  <span>Activité</span>
+</nav>
+{% endblock %}
+
+{% block content %}
+{% include "transport/_staff_nav.html" with staff_section="activite" %}
+
+<div class="page-header">
+  <div>
+    <h2 class="page-header__title">📈 Activité récente</h2>
+    <div class="page-header__sub">Dernières expéditions et destinations les plus demandées.</div>
+  </div>
+</div>
+
+<section class="grid grid-2" style="align-items:start;">
+  <div class="card">
+    <h3 class="card__title">Dernières expéditions</h3>
+    <div class="table-wrap mt-8">
+      <table>
+        <thead><tr><th>Réf</th><th>Statut</th><th>Client</th><th>Destination</th></tr></thead>
+        <tbody>
+          {% for e in latest_expeditions %}
+          <tr>
+            <td><a href="{% url 'expedition_detail' e.pk %}"><b>{{ e.reference }}</b></a></td>
+            <td>{% include "transport/_statut_badge.html" with statut=e.statut label=e.get_statut_display %}</td>
+            <td>{{ e.client_nom|default:"—" }}</td>
+            <td>{{ e.destination }}</td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="4"><div class="empty">Aucune expédition.</div></td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3 class="card__title">Top destinations</h3>
+    <div class="table-wrap mt-8">
+      <table>
+        <thead><tr><th>Destination</th><th class="right">Nb</th></tr></thead>
+        <tbody>
+          {% for row in top_destinations %}
+          <tr><td>{{ row.destination }}</td><td class="right"><span class="badge">{{ row.n }}</span></td></tr>
+          {% empty %}
+          <tr><td colspan="2"><div class="empty">Aucune donnée.</div></td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+{% endblock %}

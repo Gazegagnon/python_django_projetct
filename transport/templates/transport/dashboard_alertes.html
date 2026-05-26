@@ -1,0 +1,85 @@
+{% extends "transport/base.html" %}
+{% block title %}Alertes · Dashboard{% endblock %}
+
+{% block breadcrumb %}
+<nav class="breadcrumb" aria-label="Fil d'Ariane">
+  <a href="{% url 'home' %}">Accueil</a>
+  <span class="breadcrumb__sep">/</span>
+  <a href="{% url 'dashboard_overview' %}">Dashboard</a>
+  <span class="breadcrumb__sep">/</span>
+  <span>Alertes</span>
+</nav>
+{% endblock %}
+
+{% block content %}
+{% include "transport/_staff_nav.html" with staff_section="alertes" %}
+
+<div class="page-header">
+  <div>
+    <h2 class="page-header__title">⚠️ Alertes opérationnelles</h2>
+    <div class="page-header__sub">Commandes en attente prolongée et retards SLA.</div>
+  </div>
+</div>
+
+<section class="card card--bad mb-16">
+  <div class="row row--between">
+    <div>
+      <div class="card__title">En attente d'assignation</div>
+      <div class="muted">{{ overdue_count }} commande{{ overdue_count|pluralize }} sans livraison planifiée depuis plus de {{ alert_days }} jour{{ alert_days|pluralize }}.</div>
+    </div>
+    <form method="get" class="row">
+      <label class="muted">Seuil (jours)</label>
+      <select name="alert_days" onchange="this.form.submit()">
+        <option value="1"  {% if alert_days == 1  %}selected{% endif %}>1</option>
+        <option value="3"  {% if alert_days == 3  %}selected{% endif %}>3</option>
+        <option value="7"  {% if alert_days == 7  %}selected{% endif %}>7</option>
+        <option value="14" {% if alert_days == 14 %}selected{% endif %}>14</option>
+        <option value="30" {% if alert_days == 30 %}selected{% endif %}>30</option>
+      </select>
+    </form>
+  </div>
+  {% if overdue_list %}
+  <div class="table-wrap mt-16">
+    <table>
+      <thead><tr><th>Réf</th><th>Client</th><th>Trajet</th><th>Attente</th><th></th></tr></thead>
+      <tbody>
+        {% for e in overdue_list %}
+        <tr>
+          <td><b>{{ e.reference }}</b></td>
+          <td>{{ e.client_nom }}</td>
+          <td>{{ e.origine }} → {{ e.destination }}</td>
+          <td><span class="badge badge--warn">{{ e.days_waiting }} j</span></td>
+          <td><a class="btn btn--sm" href="{% url 'planifier_livraison' e.pk %}">Planifier</a></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <p class="muted mt-16">Aucune alerte d'attente pour ce seuil.</p>
+  {% endif %}
+</section>
+
+<section class="card card--bad">
+  <div class="card__title">SLA dépassé ({{ sla_overdue_count }})</div>
+  {% if sla_list %}
+  <div class="table-wrap mt-16">
+    <table>
+      <thead><tr><th>Réf</th><th>Client</th><th>Date cible</th><th>Retard</th></tr></thead>
+      <tbody>
+        {% for e in sla_list %}
+        <tr>
+          <td><a href="{% url 'expedition_detail' e.pk %}"><b>{{ e.reference }}</b></a></td>
+          <td>{{ e.client_nom }}</td>
+          <td>{{ e.date_cible|date:"d/m/Y" }}</td>
+          <td><span class="badge badge--bad">{{ e.days_late }} j</span></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <p class="muted mt-16">Aucun retard SLA détecté.</p>
+  {% endif %}
+</section>
+{% endblock %}

@@ -1,0 +1,29 @@
+{% extends "transport/base.html" %}
+{% block title %}Inscription · Transport Console{% endblock %}
+
+{% block content %}
+<div class="auth-card">
+  <div class="page-header" style="margin-bottom:8px;">
+    <div>
+      <h2 class="page-header__title">Créer un compte</h2>
+      <div class="page-header__sub">Accédez à votre espace client pour passer des commandes.</div>
+    </div>
+  </div>
+
+  <form method="post" novalidate data-loading>
+    {% csrf_token %}
+    {% for field in form %}
+      <div class="form-row">
+        <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+        {{ field }}
+        {{ field.errors }}
+        {% if field.help_text %}<span class="helptext">{{ field.help_text }}</span>{% endif %}
+      </div>
+    {% endfor %}
+    <div class="actions mt-16">
+      <button type="submit" class="btn">S'inscrire</button>
+      <a class="btn btn--ghost" href="{% url 'login' %}">Déjà un compte ?</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

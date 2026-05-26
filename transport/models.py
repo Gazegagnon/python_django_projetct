@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.core.validators import MinValueValidator
@@ -12,22 +14,22 @@ class Expedition(models.Model):
         LIVREE = "LIVREE", "Livrée"
         ANNULEE = "ANNULEE", "Annulée"
 
-    # Référence auto
     reference = models.CharField(max_length=30, unique=True, blank=True, editable=False)
-    annee = models.PositiveSmallIntegerField(default=2026, editable=False, db_index=True)
+    annee = models.PositiveSmallIntegerField(default=0, editable=False, db_index=True)
     numero = models.PositiveIntegerField(default=0, editable=False, db_index=True)
 
-    client_nom = models.CharField(max_length=120, default="Client inconnu")
-    client_email = models.EmailField(default="client@transport.com")
+    client_nom = models.CharField(max_length=120, blank=True, default="")
+    client_email = models.EmailField(blank=True, default="")
 
-    origine = models.CharField(max_length=200, default="Origine inconnue")
-    destination = models.CharField(max_length=200, default="Destination inconnue")
+    origine = models.CharField(max_length=200, blank=True, default="")
+    destination = models.CharField(max_length=200, blank=True, default="")
 
     poids_kg = models.DecimalField(
         max_digits=8,
         decimal_places=2,
-        default=0,
-        validators=[MinValueValidator(0)],
+        null=True,
+        blank=True,
+        validators=[MinValueValidator(Decimal("0.01"))],
     )
     description = models.TextField(blank=True, default="")
 
@@ -51,9 +53,10 @@ class Expedition(models.Model):
 
     client_user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
-        null=True, blank=True,
+        null=True,
+        blank=True,
         on_delete=models.SET_NULL,
-        related_name="expeditions"
+        related_name="expeditions",
     )
 
     pickup_adresse = models.CharField(max_length=255, blank=True, default="")
@@ -67,11 +70,7 @@ class Expedition(models.Model):
     )
 
     instructions = models.TextField(blank=True, default="")
-
-    # Livraison programmée : si null => immédiate
     planifiee_pour = models.DateTimeField(null=True, blank=True, db_index=True)
-
-    # Annulation
     raison_annulation = models.CharField(max_length=255, blank=True, default="")
 
     class Meta:
@@ -87,36 +86,30 @@ class Expedition(models.Model):
         super().clean()
         errors = {}
 
-        if self.poids_kg is not None and self.poids_kg < 0:
-            errors["poids_kg"] = "Le poids doit être positif ou nul."
+        if self.date_cible and self.date_cible < timezone.localdate() and not self.pk:
+            errors["date_cible"] = "La date cible ne peut pas être dans le passé."
 
-        if self.date_cible and self.date_cible < timezone.localdate():
-            # Tolérance : on bloque uniquement à la création.
-            if not self.pk:
-                errors["date_cible"] = "La date cible ne peut pas être dans le passé."
+        if self.planifiee_pour and self.planifiee_pour < timezone.now() and not self.pk:
+            errors["planifiee_pour"] = "La date de planification doit être dans le futur."
 
-        if self.planifiee_pour and self.planifiee_pour < timezone.now():
-            if not self.pk:
-                errors["planifiee_pour"] = "La date de planification doit être dans le futur."
-
-        if self.origine and self.destination and self.origine.strip().lower() == self.destination.strip().lower():
+        if (
+            self.origine
+            and self.destination
+            and self.origine.strip().lower() == self.destination.strip().lower()
+        ):
             errors["destination"] = "La destination doit être différente de l'origine."
 
         if errors:
             raise ValidationError(errors)
 
     def save(self, *args, **kwargs):
-        # Génère la référence uniquement à la création
         if not self.pk and not self.reference:
             year = timezone.now().year
             self.annee = year
 
             with transaction.atomic():
                 last = (
-                    Expedition.objects
-                    .filter(annee=year)
-                    .order_by("-numero")
-                    .first()
+                    Expedition.objects.filter(annee=year).order_by("-numero").first()
                 )
                 next_num = (last.numero if last else 0) + 1
                 self.numero = next_num
@@ -134,7 +127,7 @@ class Vehicule(models.Model):
     immatriculation = models.CharField(max_length=20, unique=True)
     marque = models.CharField(max_length=50, blank=True, default="")
     modele = models.CharField(max_length=50, blank=True, default="")
-    capacite_kg = models.PositiveIntegerField(default=1000)
+    capacite_kg = models.PositiveIntegerField(null=True, blank=True)
     statut = models.CharField(
         max_length=20,
         choices=Statut.choices,
@@ -145,6 +138,12 @@ class Vehicule(models.Model):
     def __str__(self):
         return f"{self.immatriculation} ({self.get_statut_display()})"
 
+    @property
+    def livraison_active(self):
+        return self.livraisons.filter(
+            statut__in=("PLANIFIEE", "EN_COURS")
+        ).exists()
+
 
 class Livraison(models.Model):
     class Statut(models.TextChoices):
@@ -153,10 +152,19 @@ class Livraison(models.Model):
         TERMINEE = "TERMINEE", "Terminée"
         ANNULEE = "ANNULEE", "Annulée"
 
-    expedition = models.OneToOneField(Expedition, on_delete=models.CASCADE, related_name="livraison")
-    vehicule = models.ForeignKey(Vehicule, on_delete=models.PROTECT, related_name="livraisons")
+    expedition = models.OneToOneField(
+        Expedition, on_delete=models.CASCADE, related_name="livraison"
+    )
+    vehicule = models.ForeignKey(
+        Vehicule, on_delete=models.PROTECT, related_name="livraisons"
+    )
 
-    statut = models.CharField(max_length=20, choices=Statut.choices, default=Statut.PLANIFIEE, db_index=True)
+    statut = models.CharField(
+        max_length=20,
+        choices=Statut.choices,
+        default=Statut.PLANIFIEE,
+        db_index=True,
+    )
     date_depart = models.DateTimeField(null=True, blank=True)
     date_arrivee = models.DateTimeField(null=True, blank=True)
     lat = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
@@ -167,7 +175,6 @@ class Livraison(models.Model):
         ordering = ["-id"]
 
     def save(self, *args, **kwargs):
-        # Si une position est définie, on horodate automatiquement la dernière mise à jour.
         if self.lat is not None and self.lng is not None:
             self.position_maj = timezone.now()
         super().save(*args, **kwargs)
@@ -180,12 +187,9 @@ class TrackingEvent(models.Model):
     expedition = models.ForeignKey(
         Expedition,
         on_delete=models.CASCADE,
-        related_name="events"
+        related_name="events",
     )
-    statut = models.CharField(
-        max_length=20,
-        choices=Expedition.Statut.choices
-    )
+    statut = models.CharField(max_length=20, choices=Expedition.Statut.choices)
     commentaire = models.TextField(blank=True)
     date_event = models.DateTimeField(auto_now_add=True)
 
@@ -194,3 +198,92 @@ class TrackingEvent(models.Model):
 
     def __str__(self):
         return f"{self.expedition.reference} - {self.get_statut_display()}"
+
+
+class Notification(models.Model):
+    """Notification in-app pour staff ou client."""
+
+    class Categorie(models.TextChoices):
+        EN_ATTENTE = "EN_ATTENTE", "En attente d'assignation"
+        LIVRAISON_PLANIFIEE = "LIVRAISON_PLANIFIEE", "Livraison planifiée"
+        EN_COURS = "EN_COURS", "Livraison en cours"
+        LIVREE = "LIVREE", "Livrée"
+        ANNULEE = "ANNULEE", "Annulée"
+        MESSAGE_CLIENT = "MESSAGE_CLIENT", "Message client"
+        AVIS_CLIENT = "AVIS_CLIENT", "Avis client"
+        CONFIRMATION = "CONFIRMATION", "Confirmation requise"
+        SYSTEME = "SYSTEME", "Système"
+
+    destinataire = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="notifications",
+    )
+    categorie = models.CharField(max_length=30, choices=Categorie.choices, db_index=True)
+    titre = models.CharField(max_length=120)
+    message = models.TextField()
+    lien = models.CharField(max_length=255, blank=True, default="")
+    expedition = models.ForeignKey(
+        Expedition,
+        null=True,
+        blank=True,
+        on_delete=models.CASCADE,
+        related_name="notifications",
+    )
+    lu = models.BooleanField(default=False, db_index=True)
+    date_creation = models.DateTimeField(auto_now_add=True, db_index=True)
+
+    class Meta:
+        ordering = ["-date_creation"]
+
+    def __str__(self):
+        return f"{self.titre} → {self.destinataire.username}"
+
+
+class ClientMessage(models.Model):
+    """Demande ou suggestion d'un client sur une commande."""
+
+    expedition = models.ForeignKey(
+        Expedition,
+        on_delete=models.CASCADE,
+        related_name="messages_client",
+    )
+    auteur = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="messages_envoyes",
+    )
+    sujet = models.CharField(max_length=120)
+    corps = models.TextField()
+    lu_staff = models.BooleanField(default=False, db_index=True)
+    date_creation = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-date_creation"]
+
+    def __str__(self):
+        return f"{self.sujet} ({self.expedition.reference})"
+
+
+class AvisLivraison(models.Model):
+    """Retour client après livraison effectuée."""
+
+    expedition = models.OneToOneField(
+        Expedition,
+        on_delete=models.CASCADE,
+        related_name="avis",
+    )
+    auteur = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="avis_livraisons",
+    )
+    note = models.PositiveSmallIntegerField()
+    commentaire = models.TextField(blank=True, default="")
+    date_creation = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-date_creation"]
+
+    def __str__(self):
+        return f"Avis {self.note}/5 — {self.expedition.reference}"

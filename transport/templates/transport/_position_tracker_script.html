@@ -1,0 +1,65 @@
+<script>
+(function () {
+  const url = "{{ position_url }}";
+  const mapEl = document.getElementById("{{ map_id|default:'map' }}");
+  const info = document.getElementById("{{ info_id|default:'pos-info' }}");
+  if (!mapEl || !info) return;
+
+  const defaultLatLng = [48.8566, 2.3522];
+  const map = L.map(mapEl.id).setView(defaultLatLng, 12);
+  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    maxZoom: 19,
+    attribution: "&copy; OpenStreetMap",
+  }).addTo(map);
+
+  const marker = L.marker(defaultLatLng).addTo(map);
+  let delay = 5000;
+  let timer = null;
+
+  async function refresh() {
+    try {
+      const res = await fetch(url, { headers: { "X-Requested-With": "fetch" } });
+      if (res.status === 429) {
+        info.textContent = "Trop de requêtes. Ralentissement automatique…";
+        delay = Math.min(delay * 2, 60000);
+        schedule();
+        return;
+      }
+      if (!res.ok) throw new Error("HTTP " + res.status);
+      const data = await res.json();
+
+      if (!data.has_position) {
+        info.textContent = "Position non disponible (livraison non démarrée ou pas encore assignée).";
+        schedule();
+        return;
+      }
+
+      const latlng = [data.lat, data.lng];
+      marker.setLatLng(latlng);
+      map.setView(latlng, map.getZoom());
+      info.textContent =
+        "Dernière mise à jour : " +
+        (data.updated_at || "—") +
+        " · Statut expédition : " +
+        data.statut +
+        (data.livraison_statut ? " · Livraison : " + data.livraison_statut : "");
+
+      if (data.statut === "LIVREE" || data.livraison_statut === "TERMINEE") {
+        return;
+      }
+      schedule();
+    } catch (e) {
+      info.textContent = "Impossible de charger la position.";
+      delay = Math.min(delay * 2, 60000);
+      schedule();
+    }
+  }
+
+  function schedule() {
+    if (timer) clearTimeout(timer);
+    timer = setTimeout(refresh, delay);
+  }
+
+  refresh();
+})();
+</script>

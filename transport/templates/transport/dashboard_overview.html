@@ -1,0 +1,70 @@
+{% extends "transport/base.html" %}
+{% block title %}Vue d'ensemble · Dashboard{% endblock %}
+
+{% block breadcrumb %}
+<nav class="breadcrumb" aria-label="Fil d'Ariane">
+  <a href="{% url 'home' %}">Accueil</a>
+  <span class="breadcrumb__sep">/</span>
+  <span>Dashboard</span>
+</nav>
+{% endblock %}
+
+{% block content %}
+{% include "transport/_staff_nav.html" with staff_section="overview" %}
+
+<div class="page-header">
+  <div>
+    <h2 class="page-header__title">📊 Vue d'ensemble</h2>
+    <div class="page-header__sub">Indicateurs clés et tendances d'activité.</div>
+  </div>
+  <form method="get" class="row">
+    <label class="muted">Période</label>
+    <select name="days" onchange="this.form.submit()" style="max-width:160px;">
+      <option value="7"  {% if days_selected == 7  %}selected{% endif %}>7 jours</option>
+      <option value="30" {% if days_selected == 30 %}selected{% endif %}>30 jours</option>
+      <option value="90" {% if days_selected == 90 %}selected{% endif %}>90 jours</option>
+    </select>
+  </form>
+</div>
+
+<section class="grid grid-5">
+  <div class="card"><div class="muted">Total</div><div class="kpi__value">{{ total }}</div></div>
+  <div class="card"><div class="muted">En attente</div><div class="kpi__value">{{ kpis.en_attente }}</div></div>
+  <div class="card"><div class="muted">En cours</div><div class="kpi__value">{{ kpis.en_cours }}</div></div>
+  <div class="card"><div class="muted">Livrées</div><div class="kpi__value">{{ kpis.livree }}</div></div>
+  <div class="card"><div class="muted">Annulées</div><div class="kpi__value">{{ kpis.annulee }}</div></div>
+</section>
+
+<section class="grid grid-2 mt-24">
+  <div class="card">
+    <h3 class="card__title">Répartition par statut</h3>
+    <canvas id="chartStatut" style="max-height:320px;"></canvas>
+  </div>
+  <div class="card">
+    <h3 class="card__title">Créations ({{ days_selected }} j)</h3>
+    <canvas id="chartPerDay" style="max-height:320px;"></canvas>
+  </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+  new Chart(document.getElementById('chartStatut'), {
+    type: 'doughnut',
+    data: {
+      labels: {{ statut_labels_json|safe }},
+      datasets: [{ data: {{ statut_values_json|safe }}, backgroundColor: ['#f59e0b','#38bdf8','#22c55e','#ef4444'], borderWidth: 0 }]
+    },
+    options: { responsive: true, plugins: { legend: { position: 'bottom' } }, cutout: '62%' }
+  });
+  new Chart(document.getElementById('chartPerDay'), {
+    type: 'line',
+    data: {
+      labels: {{ per_day_labels_json|safe }},
+      datasets: [{ label: 'Expéditions', data: {{ per_day_values_json|safe }}, borderColor: '#3b82f6', backgroundColor: 'rgba(59,130,246,0.15)', tension: 0.3, fill: true }]
+    },
+    options: { responsive: true, scales: { y: { beginAtZero: true, ticks: { precision: 0 } } }, plugins: { legend: { display: false } } }
+  });
+</script>
+{% endblock %}

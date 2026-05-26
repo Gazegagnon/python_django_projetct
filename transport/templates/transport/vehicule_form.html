@@ -1,0 +1,36 @@
+{% extends "transport/base.html" %}
+{% block title %}{% if object %}Modifier{% else %}Nouveau{% endif %} véhicule{% endblock %}
+
+{% block breadcrumb %}
+<nav class="breadcrumb" aria-label="Fil d'Ariane">
+  <a href="{% url 'vehicule_list' %}">Véhicules</a>
+  <span class="breadcrumb__sep">/</span>
+  <span>{% if object %}Modifier{% else %}Nouveau{% endif %}</span>
+</nav>
+{% endblock %}
+
+{% block content %}
+{% include "transport/_staff_nav.html" with staff_section="vehicules" %}
+
+<div class="page-header">
+  <h2 class="page-header__title">{% if object %}✏️ {{ object.immatriculation }}{% else %}+ Nouveau véhicule{% endif %}</h2>
+</div>
+
+<form method="post" class="card" novalidate>
+  {% csrf_token %}
+  {% for field in form %}
+  <div class="form-row">
+    <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+    {{ field }}
+    {{ field.errors }}
+  </div>
+  {% endfor %}
+  <div class="actions mt-24">
+    <button type="submit" class="btn">Enregistrer</button>
+    <a class="btn btn--ghost" href="{% url 'vehicule_list' %}">Annuler</a>
+    {% if object %}
+    <a class="btn btn--danger" href="{% url 'vehicule_delete' object.pk %}" data-confirm="Supprimer ce véhicule ?">Supprimer</a>
+    {% endif %}
+  </div>
+</form>
+{% endblock %}

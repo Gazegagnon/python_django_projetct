@@ -34,7 +34,10 @@ temps réel. Trois rôles cloisonnés : **visiteur**, **client connecté** et
 - ✉️ **Notifications email** automatiques sur changement de statut (signal
   `post_save` sur `TrackingEvent`).
 - 🌓 **Thème clair / sombre** (préférence persistée dans `localStorage`).
-- 🔐 **Authentification** Django (login/logout) avec redirections contextuelles.
+- 🔐 **Authentification** complète : inscription, connexion, déconnexion,
+  réinitialisation de mot de passe.
+- 📥 **Export CSV** des expéditions (staff, filtres conservés).
+- 🛡️ **Limitation de débit** sur l'API position (120 req/h par utilisateur).
 - 🛡️ **Sécurité** : protection CSRF, actions destructives en POST,
   `LoginRequiredMixin` + `UserPassesTestMixin` sur tout l'admin métier,
   durcissement automatique en production.
@@ -45,10 +48,11 @@ temps réel. Trois rôles cloisonnés : **visiteur**, **client connecté** et
 |---|---|
 | Backend | Python ≥ 3.11, Django 6.0 |
 | Base de données | SQLite (par défaut), compatible PostgreSQL |
-| Front | HTML5, CSS custom (design system maison), Vanilla JS |
+| Front | HTML5, CSS custom (design system maison), Vanilla JS (`app.js`) |
 | Charts | [Chart.js](https://www.chartjs.org/) (CDN) |
 | Cartographie | [Leaflet](https://leafletjs.com/) + OpenStreetMap (CDN) |
-| Tests | `django.test.TestCase` (14 tests d'intégration) |
+| Static files | WhiteNoise (production) |
+| Tests | `django.test.TestCase` (23 tests d'intégration) |
 
 ## Installation
 
@@ -123,9 +127,11 @@ la liste complète.
 python manage.py test transport -v 2
 ```
 
-Suite courante : 14 tests couvrant la génération de référence, la sécurité
-des CBV, l'obligation POST sur les actions livraison, l'API position et le
-workflow d'annulation client.
+Suite courante : 23 tests couvrant la génération de référence, la sécurité
+des CBV, l'obligation POST sur les actions livraison, l'API position (dont
+`livraison_statut` et throttling 429), le workflow d'annulation client,
+la libération du véhicule, l'export CSV, l'inscription et le suivi public
+sans 404.
 
 ```powershell
 python manage.py check          # contrôles statiques
@@ -142,29 +148,33 @@ django_project/
 │   └── wsgi.py / asgi.py
 ├── transport/               # app métier
 │   ├── models.py            # Expedition, Vehicule, Livraison, TrackingEvent
-│   ├── views.py             # CBV + FBV (~530 lignes)
+│   ├── views.py             # CBV + FBV
+│   ├── services.py          # pagination, KPI, workflow livraison
+│   ├── throttling.py        # rate limiting API
+│   ├── auth_views.py        # inscription (SignupView)
 │   ├── forms.py             # ExpeditionForm (staff)
-│   ├── client_forms.py      # ClientCommandeCreateForm / UpdateForm
+│   ├── client_forms.py      # formulaires client + SignupForm
 │   ├── livraison_forms.py   # PlanifierLivraisonForm
 │   ├── urls.py              # routes /, /expeditions/, /client/, /api/
 │   ├── admin.py             # configuration de l'admin Django
 │   ├── context_processors.py # alertes navbar (staff)
 │   ├── notifications.py     # service d'envoi email
-│   ├── signals.py           # post_save TrackingEvent → email
+│   ├── signals.py           # post_save TrackingEvent → email (filtré)
 │   ├── apps.py              # branchement signaux dans ready()
-│   ├── tests.py             # 14 tests
+│   ├── tests.py             # 23 tests
 │   ├── management/commands/simulate_delivery.py
 │   ├── migrations/
 │   ├── static/css/app.css   # design system maison
+│   ├── static/js/app.js     # confirm + loading forms
 │   └── templates/
 │       ├── 400.html / 403.html / 404.html / 500.html
-│       ├── registration/    # login + logged_out
+│       ├── registration/    # login, signup, reset password
 │       └── transport/
 │           ├── base.html
 │           ├── home.html, dashboard.html, suivi.html
 │           ├── expedition_*.html, planifier_livraison.html
-│           ├── _statut_badge.html (partial)
-│           ├── _pagination.html  (partial)
+│           ├── _statut_badge.html, _pagination.html
+│           ├── _timeline.html, _leaflet_assets.html
 │           └── client/      # 6 pages espace client
 ├── docs/
 │   └── SPECS.md             # spec de chaque page

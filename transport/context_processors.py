@@ -1,19 +1,23 @@
 from datetime import timedelta
+
 from django.utils import timezone
-from django.db.models import Count
+
+from .inapp_notifications import unread_count_for
 from .models import Expedition
+
 
 def admin_alerts(request):
     """
-    Injecte des compteurs SLA/en attente dans toutes les pages.
-    Visible surtout via la navbar (staff).
+    Injecte des compteurs SLA/en attente (staff) et notifications non lues.
     """
+    ctx = {}
+    if request.user.is_authenticated:
+        ctx["nav_unread_notifications"] = unread_count_for(request.user)
+
     if not request.user.is_authenticated or not request.user.is_staff:
-        return {}
+        return ctx
 
     today = timezone.localdate()
-
-    # seuil "en attente" (par défaut 3 jours, peut être overridé via querystring)
     alert_param = request.GET.get("alert_days", "3")
     try:
         alert_days = int(alert_param)
@@ -24,18 +28,15 @@ def admin_alerts(request):
 
     threshold_date = today - timedelta(days=alert_days)
 
-    overdue_count = Expedition.objects.filter(
-        statut=Expedition.Statut.EN_ATTENTE,
-        date_creation__date__lte=threshold_date
-    ).count()
-
-    sla_overdue_count = Expedition.objects.filter(
-        date_cible__isnull=False,
-        date_cible__lt=today
-    ).exclude(statut=Expedition.Statut.LIVREE).count()
-
-    return {
+    ctx.update({
         "nav_alert_days": alert_days,
-        "nav_overdue_count": overdue_count,
-        "nav_sla_overdue_count": sla_overdue_count,
-    }
+        "nav_overdue_count": Expedition.objects.filter(
+            statut=Expedition.Statut.EN_ATTENTE,
+            date_creation__date__lte=threshold_date,
+        ).count(),
+        "nav_sla_overdue_count": Expedition.objects.filter(
+            date_cible__isnull=False,
+            date_cible__lt=today,
+        ).exclude(statut=Expedition.Statut.LIVREE).count(),
+    })
+    return ctx

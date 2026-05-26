@@ -1,11 +1,10 @@
 from django import forms
+
 from .models import Expedition
 
 
 class ExpeditionForm(forms.ModelForm):
-    """Formulaire staff. Le champ ``statut`` n'est pas exposé : le cycle de vie
-    est piloté par le workflow (planification → démarrage → fin de livraison).
-    Pour une correction exceptionnelle, passer par l'admin Django."""
+    """Formulaire staff. Le statut est piloté par le workflow livraison."""
 
     class Meta:
         model = Expedition
@@ -22,3 +21,8 @@ class ExpeditionForm(forms.ModelForm):
             "description": forms.Textarea(attrs={"rows": 4}),
             "date_cible": forms.DateInput(attrs={"type": "date"}),
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for name in ("client_nom", "client_email", "origine", "destination"):
+            self.fields[name].required = True
