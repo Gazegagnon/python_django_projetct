@@ -537,9 +537,12 @@ input[type="checkbox"], input[type="radio"] { width: auto; }
     margin-top: 4px;
 }
 
-.btn--block {
-    display: block;
+.btn--block,
+button.btn.btn--block {
+    display: flex;
     width: 100%;
+    justify-content: center;
+    align-items: center;
     text-align: center;
 }
 

@@ -16,9 +16,7 @@
 </head>
 <body class="auth-body {% block auth_body_class %}{% endblock %}">
   <div class="auth-layout">
-    <header class="auth-layout__header">
-      <a class="auth-layout__brand" href="{% url 'home' %}">🚚 Transport Console</a>
-    </header>
+    {% block auth_header %}{% endblock %}
 
     <main class="auth-layout__main">
       {% if messages %}
@@ -34,7 +32,7 @@
     </main>
 
     <footer class="auth-layout__footer muted">
-      <a href="{% url 'home' %}">← Retour à l'accueil</a>
+      <a href="{% url 'home' %}">Retour à l'accueil</a>
     </footer>
   </div>
   <script src="{% static 'js/app.js' %}"></script>
