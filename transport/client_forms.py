@@ -1,5 +1,8 @@
 from django import forms
+from django.utils import timezone
+
 from .models import Expedition
+
 
 class ClientCommandeCreateForm(forms.ModelForm):
     class Meta:
@@ -20,6 +23,21 @@ class ClientCommandeCreateForm(forms.ModelForm):
             "instructions": forms.Textarea(attrs={"rows": 3}),
             "planifiee_pour": forms.DateTimeInput(attrs={"type": "datetime-local"}),
         }
+
+    def clean_poids_kg(self):
+        value = self.cleaned_data.get("poids_kg")
+        if value is not None and value <= 0:
+            raise forms.ValidationError("Le poids doit être strictement positif.")
+        return value
+
+    def clean_planifiee_pour(self):
+        value = self.cleaned_data.get("planifiee_pour")
+        if value and value < timezone.now():
+            raise forms.ValidationError(
+                "La date de planification doit être dans le futur."
+            )
+        return value
+
 
 class ClientCommandeUpdateForm(forms.ModelForm):
     """
@@ -42,3 +60,9 @@ class ClientCommandeUpdateForm(forms.ModelForm):
             "instructions": forms.Textarea(attrs={"rows": 3}),
             "planifiee_pour": forms.DateTimeInput(attrs={"type": "datetime-local"}),
         }
+
+    def clean_poids_kg(self):
+        value = self.cleaned_data.get("poids_kg")
+        if value is not None and value <= 0:
+            raise forms.ValidationError("Le poids doit être strictement positif.")
+        return value

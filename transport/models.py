@@ -1,6 +1,8 @@
+from django.conf import settings
+from django.core.exceptions import ValidationError
+from django.core.validators import MinValueValidator
 from django.db import models, transaction
 from django.utils import timezone
-from django.conf import settings
 
 
 class Expedition(models.Model):
@@ -21,7 +23,12 @@ class Expedition(models.Model):
     origine = models.CharField(max_length=200, default="Origine inconnue")
     destination = models.CharField(max_length=200, default="Destination inconnue")
 
-    poids_kg = models.DecimalField(max_digits=8, decimal_places=2, default=0)
+    poids_kg = models.DecimalField(
+        max_digits=8,
+        decimal_places=2,
+        default=0,
+        validators=[MinValueValidator(0)],
+    )
     description = models.TextField(blank=True, default="")
 
     statut = models.CharField(
@@ -75,6 +82,28 @@ class Expedition(models.Model):
 
     def __str__(self) -> str:
         return f"{self.reference} ({self.get_statut_display()})"
+
+    def clean(self):
+        super().clean()
+        errors = {}
+
+        if self.poids_kg is not None and self.poids_kg < 0:
+            errors["poids_kg"] = "Le poids doit être positif ou nul."
+
+        if self.date_cible and self.date_cible < timezone.localdate():
+            # Tolérance : on bloque uniquement à la création.
+            if not self.pk:
+                errors["date_cible"] = "La date cible ne peut pas être dans le passé."
+
+        if self.planifiee_pour and self.planifiee_pour < timezone.now():
+            if not self.pk:
+                errors["planifiee_pour"] = "La date de planification doit être dans le futur."
+
+        if self.origine and self.destination and self.origine.strip().lower() == self.destination.strip().lower():
+            errors["destination"] = "La destination doit être différente de l'origine."
+
+        if errors:
+            raise ValidationError(errors)
 
     def save(self, *args, **kwargs):
         # Génère la référence uniquement à la création
@@ -134,20 +163,14 @@ class Livraison(models.Model):
     lng = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
     position_maj = models.DateTimeField(null=True, blank=True)
 
-    def save(self, *args, **kwargs):
-
-        # si position définie → mise à jour automatique
-        if self.lat is not None and self.lng is not None:
-            self.position_maj = timezone.now()
-
-        super().save(*args, **kwargs)
-
-    def __str__(self):
-        return f"Livraison {self.expedition.reference} - {self.vehicule.immatriculation}"
-
-
     class Meta:
         ordering = ["-id"]
+
+    def save(self, *args, **kwargs):
+        # Si une position est définie, on horodate automatiquement la dernière mise à jour.
+        if self.lat is not None and self.lng is not None:
+            self.position_maj = timezone.now()
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return f"Livraison {self.expedition.reference} - {self.vehicule.immatriculation}"

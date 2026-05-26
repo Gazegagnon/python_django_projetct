@@ -1,38 +1,80 @@
 {% extends "transport/base.html" %}
-{% block title %}Mes commandes{% endblock %}
+{% block title %}Mes commandes · Transport Console{% endblock %}
+
+{% block breadcrumb %}
+<nav class="breadcrumb" aria-label="Fil d'Ariane">
+  <a href="{% url 'home' %}">Accueil</a>
+  <span class="breadcrumb__sep">/</span>
+  <span>Mes commandes</span>
+</nav>
+{% endblock %}
+
 {% block content %}
-<h2>Mes commandes</h2>
+<div class="page-header">
+  <div>
+    <h2 class="page-header__title">📦 Mes commandes</h2>
+    <div class="page-header__sub">
+      {{ page_obj.paginator.count }} commande{{ page_obj.paginator.count|pluralize }} au total
+    </div>
+  </div>
+  <div class="actions">
+    <a class="btn btn--ghost" href="{% url 'client_historique' %}">📁 Historique</a>
+    <a class="btn" href="{% url 'client_commande_create' %}">➕ Nouvelle commande</a>
+  </div>
+</div>
 
-<p><a class="chip" href="{% url 'client_commande_create' %}">➕ Nouvelle commande</a>
-<a class="chip" href="{% url 'client_historique' %}" style="background:transparent;">📁 Historique</a></p>
-
-<table>
-  <thead>
-    <tr>
-      <th>Réf</th><th>Statut</th><th>Origine</th><th>Destination</th><th>Programmée</th><th>Actions</th>
-    </tr>
-  </thead>
-  <tbody>
-    {% for e in expeditions %}
+<div class="table-wrap">
+  <table class="table--zebra">
+    <thead>
       <tr>
-        <td><a href="{% url 'client_commande_detail' e.reference %}">{{ e.reference }}</a></td>
-        <td><span class="badge">{{ e.get_statut_display }}</span></td>
-        <td>{{ e.origine }}</td>
-        <td>{{ e.destination }}</td>
-        <td>{% if e.planifiee_pour %}<span class="badge">{{ e.planifiee_pour }}</span>{% else %}Immédiate{% endif %}</td>
-        <td>
-          <a href="{% url 'client_commande_detail' e.reference %}">Voir</a>
-          {% if e.statut == "EN_ATTENTE" %}
-            · <a href="{% url 'client_commande_update' e.reference %}">Modifier</a>
-            · <a href="{% url 'client_commande_cancel' e.reference %}">Annuler</a>
-          {% elif e.statut == "EN_COURS" %}
-            · <a href="{% url 'client_commande_update' e.reference %}">Instructions</a>
-          {% endif %}
-        </td>
+        <th>Réf</th>
+        <th>Statut</th>
+        <th>Origine</th>
+        <th>Destination</th>
+        <th>Programmée</th>
+        <th class="right">Actions</th>
       </tr>
-    {% empty %}
-      <tr><td colspan="6">Aucune commande.</td></tr>
-    {% endfor %}
-  </tbody>
-</table>
+    </thead>
+    <tbody>
+      {% for e in expeditions %}
+        <tr>
+          <td><a href="{% url 'client_commande_detail' e.reference %}"><b>{{ e.reference }}</b></a></td>
+          <td>{% include "transport/_statut_badge.html" with statut=e.statut label=e.get_statut_display %}</td>
+          <td>{{ e.origine }}</td>
+          <td>{{ e.destination }}</td>
+          <td>
+            {% if e.planifiee_pour %}
+              <span class="badge">{{ e.planifiee_pour|date:"d/m/Y H:i" }}</span>
+            {% else %}
+              <span class="muted">Immédiate</span>
+            {% endif %}
+          </td>
+          <td class="right">
+            <div class="actions" style="justify-content:flex-end;">
+              <a class="chip" href="{% url 'client_commande_detail' e.reference %}">Voir</a>
+              {% if e.statut == "EN_ATTENTE" %}
+                <a class="chip" href="{% url 'client_commande_update' e.reference %}">Modifier</a>
+                <a class="chip chip--bad" href="{% url 'client_commande_cancel' e.reference %}">Annuler</a>
+              {% elif e.statut == "EN_COURS" %}
+                <a class="chip" href="{% url 'client_commande_update' e.reference %}">Instructions</a>
+              {% endif %}
+            </div>
+          </td>
+        </tr>
+      {% empty %}
+        <tr>
+          <td colspan="6">
+            <div class="empty">
+              <div class="empty__icon">📭</div>
+              <p>Vous n'avez aucune commande en cours.</p>
+              <a class="btn" href="{% url 'client_commande_create' %}">Passer ma première commande</a>
+            </div>
+          </td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{% include "transport/_pagination.html" with page_obj=page_obj %}
 {% endblock %}

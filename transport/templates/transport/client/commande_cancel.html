@@ -1,16 +1,38 @@
 {% extends "transport/base.html" %}
-{% block title %}Annuler {{ expedition.reference }}{% endblock %}
-{% block content %}
-<h2>Annuler la commande {{ expedition.reference }}</h2>
-<p class="muted">Annulation possible uniquement si le statut est “En attente”.</p>
+{% block title %}Annuler {{ expedition.reference }} · Transport Console{% endblock %}
 
-<form method="post">
-  {% csrf_token %}
-  <p>
-    <label>Raison (optionnel)</label><br>
-    <input name="raison_annulation" placeholder="Ex: erreur d’adresse, changement de plan…" />
+{% block breadcrumb %}
+<nav class="breadcrumb" aria-label="Fil d'Ariane">
+  <a href="{% url 'home' %}">Accueil</a>
+  <span class="breadcrumb__sep">/</span>
+  <a href="{% url 'client_commandes' %}">Mes commandes</a>
+  <span class="breadcrumb__sep">/</span>
+  <a href="{% url 'client_commande_detail' expedition.reference %}">{{ expedition.reference }}</a>
+  <span class="breadcrumb__sep">/</span>
+  <span>Annuler</span>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="card card--bad">
+  <h2 style="margin-top:0;">⛔ Annuler la commande {{ expedition.reference }}</h2>
+  <p class="muted">
+    L'annulation n'est possible que si la commande est encore au statut « En attente ».
+    Une fois confirmée, l'annulation est définitive.
   </p>
-  <button type="submit">Confirmer l’annulation</button>
-  <a class="chip" href="{% url 'client_commande_detail' expedition.reference %}" style="background:transparent;">Retour</a>
-</form>
+
+  <form method="post" class="mt-16">
+    {% csrf_token %}
+    <div class="form-row">
+      <label for="id_raison">Raison (optionnel)</label>
+      <input id="id_raison" type="text" name="raison_annulation"
+             placeholder="Ex : erreur d'adresse, changement de plan…">
+    </div>
+
+    <div class="actions mt-16">
+      <button type="submit" class="btn btn--danger">Confirmer l'annulation</button>
+      <a class="btn btn--ghost" href="{% url 'client_commande_detail' expedition.reference %}">Conserver la commande</a>
+    </div>
+  </form>
+</div>
 {% endblock %}

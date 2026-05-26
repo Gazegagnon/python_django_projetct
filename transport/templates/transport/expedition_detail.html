@@ -1,33 +1,151 @@
 {% extends "transport/base.html" %}
-{% block title %}Détails {{ expedition.reference }}{% endblock %}
+{% block title %}{{ expedition.reference }} · Expédition{% endblock %}
+
+{% block breadcrumb %}
+<nav class="breadcrumb" aria-label="Fil d'Ariane">
+  <a href="{% url 'home' %}">Accueil</a>
+  <span class="breadcrumb__sep">/</span>
+  <a href="{% url 'expedition_list' %}">Expéditions</a>
+  <span class="breadcrumb__sep">/</span>
+  <span>{{ expedition.reference }}</span>
+</nav>
+{% endblock %}
+
 {% block content %}
-{% if user.is_staff %}
-  <hr style="border:none;border-top:1px solid var(--line); margin:16px 0;">
-  <h3>Actions livraison</h3>
+<div class="page-header">
+  <div>
+    <h2 class="page-header__title">Expédition {{ expedition.reference }}</h2>
+    <div class="page-header__sub">
+      Créée le {{ expedition.date_creation|date:"d/m/Y à H:i" }}
+      · Dernière mise à jour {{ expedition.date_maj|date:"d/m/Y à H:i" }}
+    </div>
+  </div>
+  <div>
+    {% include "transport/_statut_badge.html" with statut=expedition.statut label=expedition.get_statut_display %}
+  </div>
+</div>
 
-  {% if expedition.livraison %}
-    <p class="muted">Véhicule: {{ expedition.livraison.vehicule.immatriculation }} · Statut livraison: {{ expedition.livraison.get_statut_display }}</p>
+<div class="grid grid-2" style="align-items:start;">
 
-    <a class="chip" href="{% url 'livraison_start' expedition.pk %}">▶️ Démarrer</a>
-    <a class="chip" href="{% url 'livraison_finish' expedition.pk %}" style="background:transparent;">✅ Terminer</a>
+  <section class="card">
+    <h3 class="card__title">📋 Informations</h3>
+    <dl class="dl-grid mt-8">
+      <dt>Client</dt>
+      <dd>{{ expedition.client_nom }}<br><span class="muted">{{ expedition.client_email }}</span></dd>
+
+      <dt>Origine</dt>
+      <dd>{{ expedition.origine }}</dd>
+
+      <dt>Destination</dt>
+      <dd>{{ expedition.destination }}</dd>
+
+      <dt>Type de colis</dt>
+      <dd>{{ expedition.get_type_colis_display }}</dd>
+
+      <dt>Poids</dt>
+      <dd>{{ expedition.poids_kg }} kg</dd>
+
+      <dt>Date cible</dt>
+      <dd>
+        {% if expedition.date_cible %}
+          {{ expedition.date_cible|date:"d/m/Y" }}
+        {% else %}
+          <span class="muted">Non définie</span>
+        {% endif %}
+      </dd>
+
+      <dt>Description</dt>
+      <dd>{{ expedition.description|default:"—"|linebreaksbr }}</dd>
+
+      {% if expedition.statut == "ANNULEE" and expedition.raison_annulation %}
+        <dt>Raison annulation</dt>
+        <dd>{{ expedition.raison_annulation }}</dd>
+      {% endif %}
+    </dl>
+  </section>
+
+  <section class="card">
+    <h3 class="card__title">🚚 Livraison</h3>
+    {% if expedition.livraison %}
+      <dl class="dl-grid mt-8">
+        <dt>Véhicule</dt>
+        <dd>{{ expedition.livraison.vehicule.immatriculation }}</dd>
+        <dt>Statut</dt>
+        <dd>{{ expedition.livraison.get_statut_display }}</dd>
+        {% if expedition.livraison.date_depart %}
+          <dt>Départ</dt>
+          <dd>{{ expedition.livraison.date_depart|date:"d/m/Y H:i" }}</dd>
+        {% endif %}
+        {% if expedition.livraison.date_arrivee %}
+          <dt>Arrivée</dt>
+          <dd>{{ expedition.livraison.date_arrivee|date:"d/m/Y H:i" }}</dd>
+        {% endif %}
+        {% if expedition.livraison.lat and expedition.livraison.lng %}
+          <dt>Position</dt>
+          <dd>
+            {{ expedition.livraison.lat }}, {{ expedition.livraison.lng }}<br>
+            <span class="muted">MAJ : {{ expedition.livraison.position_maj|date:"d/m/Y H:i:s" }}</span>
+          </dd>
+        {% endif %}
+      </dl>
+
+      <hr>
+
+      <div class="actions">
+        {% if expedition.livraison.statut != "TERMINEE" %}
+          <form method="post" action="{% url 'livraison_start' expedition.pk %}" style="display:inline;">
+            {% csrf_token %}
+            <button type="submit" class="btn btn--good btn--sm">▶️ Démarrer</button>
+          </form>
+          <form method="post" action="{% url 'livraison_finish' expedition.pk %}" style="display:inline;">
+            {% csrf_token %}
+            <button type="submit" class="btn btn--sm">✅ Terminer</button>
+          </form>
+          <form method="post" action="{% url 'livraison_demo_position' expedition.pk %}" style="display:inline;">
+            {% csrf_token %}
+            <button type="submit" class="btn btn--ghost btn--sm">📍 Position demo</button>
+          </form>
+        {% else %}
+          <span class="badge badge--good">Livraison terminée</span>
+        {% endif %}
+      </div>
+    {% else %}
+      <div class="empty">
+        <div class="empty__icon">🅿️</div>
+        <p>Aucune livraison planifiée pour cette expédition.</p>
+        <a class="btn" href="{% url 'planifier_livraison' expedition.pk %}">🚚 Planifier une livraison</a>
+      </div>
+    {% endif %}
+  </section>
+</div>
+
+<section class="card mt-24">
+  <h3 class="card__title">🕓 Historique</h3>
+  {% if events %}
+    <ul class="timeline mt-8">
+      {% for ev in events %}
+        <li class="timeline__item">
+          <span class="timeline__dot"></span>
+          <div>
+            <div>
+              {% include "transport/_statut_badge.html" with statut=ev.statut label=ev.get_statut_display %}
+              <span class="muted" style="margin-left:6px;">{{ ev.date_event|date:"d/m/Y H:i" }}</span>
+            </div>
+            {% if ev.commentaire %}
+              <div style="margin-top:4px;">{{ ev.commentaire }}</div>
+            {% endif %}
+          </div>
+        </li>
+      {% endfor %}
+    </ul>
   {% else %}
-    <p class="muted">Aucune livraison planifiée.</p>
-    <a class="chip" href="{% url 'planifier_livraison' expedition.pk %}">🚚 Planifier livraison</a>
-    <a class="chip" href="{% url 'livraison_demo_position' expedition.pk %}">📍 Position demo</a>
+    <p class="muted">Aucun événement enregistré.</p>
   {% endif %}
-{% endif %}
-<p><b>Référence :</b> {{ expedition.reference }}</p>
-<p><b>Statut :</b> {{ expedition.get_statut_display }}</p>
-<p><b>Client :</b> {{ expedition.client_nom }} ({{ expedition.client_email }})</p>
-<p><b>Origine :</b> {{ expedition.origine }}</p>
-<p><b>Destination :</b> {{ expedition.destination }}</p>
-<p><b>Poids :</b> {{ expedition.poids_kg }} kg</p>
-<p><b>Description :</b> {{ expedition.description|default:"—" }}</p>
-<p><b>Créée le :</b> {{ expedition.date_creation }}</p>
-<p><b>Mise à jour :</b> {{ expedition.date_maj }}</p>
-<div class="actions">
-    <a class="chip" href="{% url 'planifier_livraison' expedition.pk %}">🚚 Planifier livraison</a>
-    <a href="{% url 'expedition_update' expedition.pk %}">✏️ Modifier</a>
-    <a href="{% url 'expedition_delete' expedition.pk %}">🗑 Supprimer</a>
+</section>
+
+<div class="actions mt-24">
+  <a class="btn btn--ghost" href="{% url 'expedition_list' %}">← Retour à la liste</a>
+  <a class="btn" href="{% url 'expedition_update' expedition.pk %}">✏️ Modifier</a>
+  <a class="btn btn--danger" href="{% url 'expedition_delete' expedition.pk %}">🗑 Supprimer</a>
 </div>
 {% endblock %}

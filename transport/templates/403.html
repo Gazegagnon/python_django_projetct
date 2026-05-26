@@ -1,0 +1,16 @@
+{% extends "transport/base.html" %}
+{% block title %}Accès refusé · Transport Console{% endblock %}
+
+{% block content %}
+<div class="empty">
+  <div class="empty__icon" style="font-size:64px;">🔒</div>
+  <h2>403 — Accès refusé</h2>
+  <p>Vous n'avez pas les autorisations nécessaires pour accéder à cette page.</p>
+  <div class="actions" style="justify-content:center;">
+    <a class="btn" href="{% url 'home' %}">🏠 Accueil</a>
+    {% if not user.is_authenticated %}
+      <a class="btn btn--ghost" href="{% url 'login' %}">Se connecter</a>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,26 @@
+{% load static %}<!doctype html>
+<html lang="fr" data-theme="light">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Erreur serveur · Transport Console</title>
+  <link rel="stylesheet" href="{% static 'css/app.css' %}">
+</head>
+<body>
+  <div class="container">
+    <main class="panel">
+      <div class="empty">
+        <div class="empty__icon" style="font-size:64px;">💥</div>
+        <h2>500 — Erreur serveur</h2>
+        <p>
+          Une erreur inattendue est survenue. Nos équipes ont été notifiées.
+          Merci de réessayer dans quelques instants.
+        </p>
+        <div class="actions" style="justify-content:center;">
+          <a class="btn" href="/">🏠 Retour à l'accueil</a>
+        </div>
+      </div>
+    </main>
+  </div>
+</body>
+</html>

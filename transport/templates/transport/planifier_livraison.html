@@ -1,13 +1,51 @@
 {% extends "transport/base.html" %}
-{% block title %}Planifier livraison{% endblock %}
-{% block content %}
-<h2>Planifier livraison</h2>
-<p class="muted">Expédition : <b>{{ expedition.reference }}</b></p>
+{% block title %}Planifier livraison · {{ expedition.reference }}{% endblock %}
 
-<form method="post">
+{% block breadcrumb %}
+<nav class="breadcrumb" aria-label="Fil d'Ariane">
+  <a href="{% url 'home' %}">Accueil</a>
+  <span class="breadcrumb__sep">/</span>
+  <a href="{% url 'expedition_list' %}">Expéditions</a>
+  <span class="breadcrumb__sep">/</span>
+  <a href="{% url 'expedition_detail' expedition.pk %}">{{ expedition.reference }}</a>
+  <span class="breadcrumb__sep">/</span>
+  <span>Planifier livraison</span>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h2 class="page-header__title">🚚 Planifier une livraison</h2>
+    <div class="page-header__sub">
+      Pour l'expédition <b>{{ expedition.reference }}</b> · {{ expedition.origine }} → {{ expedition.destination }}
+    </div>
+  </div>
+</div>
+
+<form method="post" novalidate>
   {% csrf_token %}
-  {{ form.as_p }}
-  <button type="submit">Planifier</button>
-  <a class="chip" href="{% url 'expedition_detail' expedition.pk %}" style="background:transparent;">Annuler</a>
+
+  {% if form.non_field_errors %}
+    <div class="alert alert--error"><span>⛔</span><div>{{ form.non_field_errors }}</div></div>
+  {% endif %}
+
+  <div class="form-row">
+    <label for="{{ form.vehicule.id_for_label }}">Véhicule disponible</label>
+    {{ form.vehicule }}
+    <span class="helptext">Seuls les véhicules au statut « Disponible » sont listés.</span>
+    {{ form.vehicule.errors }}
+  </div>
+
+  <div class="form-row">
+    <label for="{{ form.date_depart.id_for_label }}">Date et heure de départ prévues</label>
+    {{ form.date_depart }}
+    {{ form.date_depart.errors }}
+  </div>
+
+  <div class="actions mt-24">
+    <button type="submit" class="btn">💾 Planifier</button>
+    <a class="btn btn--ghost" href="{% url 'expedition_detail' expedition.pk %}">Annuler</a>
+  </div>
 </form>
 {% endblock %}

@@ -1,0 +1,13 @@
+{% extends "transport/base.html" %}
+{% block title %}Requête invalide · Transport Console{% endblock %}
+
+{% block content %}
+<div class="empty">
+  <div class="empty__icon" style="font-size:64px;">⚠️</div>
+  <h2>400 — Requête invalide</h2>
+  <p>La requête envoyée n'a pas pu être traitée par le serveur.</p>
+  <div class="actions" style="justify-content:center;">
+    <a class="btn" href="{% url 'home' %}">🏠 Accueil</a>
+  </div>
+</div>
+{% endblock %}

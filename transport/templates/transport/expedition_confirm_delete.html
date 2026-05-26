@@ -1,10 +1,36 @@
 {% extends "transport/base.html" %}
-{% block title %}Supprimer{% endblock %}
+{% block title %}Supprimer {{ object.reference }} · Transport Console{% endblock %}
+
+{% block breadcrumb %}
+<nav class="breadcrumb" aria-label="Fil d'Ariane">
+  <a href="{% url 'home' %}">Accueil</a>
+  <span class="breadcrumb__sep">/</span>
+  <a href="{% url 'expedition_list' %}">Expéditions</a>
+  <span class="breadcrumb__sep">/</span>
+  <a href="{% url 'expedition_detail' object.pk %}">{{ object.reference }}</a>
+  <span class="breadcrumb__sep">/</span>
+  <span>Supprimer</span>
+</nav>
+{% endblock %}
+
 {% block content %}
-<p>Supprimer l’expédition <b>{{ object.reference }}</b> ?</p>
-<form method="post">
-  {% csrf_token %}
-  <button type="submit">Oui, supprimer</button>
-  <a href="{% url 'expedition_list' %}">Annuler</a>
-</form>
+<div class="card card--bad">
+  <h2 style="margin-top:0;">🗑 Confirmer la suppression</h2>
+  <p>
+    Vous êtes sur le point de supprimer définitivement l'expédition
+    <b>{{ object.reference }}</b> ({{ object.client_nom }} — {{ object.destination }}).
+  </p>
+  <p class="muted">
+    Cette action est irréversible. La livraison associée et tous les événements
+    de tracking seront également supprimés.
+  </p>
+
+  <form method="post" class="mt-16">
+    {% csrf_token %}
+    <div class="actions">
+      <button type="submit" class="btn btn--danger">Oui, supprimer définitivement</button>
+      <a class="btn btn--ghost" href="{% url 'expedition_detail' object.pk %}">Annuler</a>
+    </div>
+  </form>
+</div>
 {% endblock %}

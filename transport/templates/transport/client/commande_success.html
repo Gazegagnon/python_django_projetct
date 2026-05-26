@@ -1,8 +1,31 @@
 {% extends "transport/base.html" %}
-{% block title %}Commande créée{% endblock %}
+{% block title %}Commande confirmée · Transport Console{% endblock %}
+
+{% block breadcrumb %}
+<nav class="breadcrumb" aria-label="Fil d'Ariane">
+  <a href="{% url 'home' %}">Accueil</a>
+  <span class="breadcrumb__sep">/</span>
+  <a href="{% url 'client_commandes' %}">Mes commandes</a>
+  <span class="breadcrumb__sep">/</span>
+  <span>Confirmation</span>
+</nav>
+{% endblock %}
+
 {% block content %}
-<h2>✅ Commande enregistrée</h2>
-<p>Votre référence : <span class="badge">{{ expedition.reference }}</span></p>
-<p><a class="chip" href="{% url 'client_commande_detail' expedition.reference %}">Suivre la commande</a>
-<a class="chip" href="{% url 'client_commandes' %}" style="background:transparent;">Retour</a></p>
+<div class="card card--good center">
+  <div style="font-size:48px; line-height:1;">✅</div>
+  <h2 style="margin-top:8px;">Commande enregistrée</h2>
+  <p class="muted">
+    Votre commande a bien été créée. Conservez votre référence pour suivre l'avancement.
+  </p>
+  <p style="font-size:18px;">
+    <span class="badge badge--good">{{ expedition.reference }}</span>
+  </p>
+
+  <div class="actions" style="justify-content:center;">
+    <a class="btn" href="{% url 'client_commande_detail' expedition.reference %}">Suivre la commande</a>
+    <a class="btn btn--ghost" href="{% url 'client_commande_create' %}">Nouvelle commande</a>
+    <a class="btn btn--ghost" href="{% url 'client_commandes' %}">Retour à mes commandes</a>
+  </div>
+</div>
 {% endblock %}

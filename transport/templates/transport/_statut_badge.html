@@ -1,0 +1,15 @@
+{% comment %}
+Badge de statut Expedition coloré.
+Usage : {% include "transport/_statut_badge.html" with statut=expedition.statut label=expedition.get_statut_display %}
+{% endcomment %}
+{% if statut == "EN_ATTENTE" %}
+  <span class="badge badge--warn">⏳ {{ label }}</span>
+{% elif statut == "EN_COURS" %}
+  <span class="badge badge--info">🚚 {{ label }}</span>
+{% elif statut == "LIVREE" %}
+  <span class="badge badge--good">✅ {{ label }}</span>
+{% elif statut == "ANNULEE" %}
+  <span class="badge badge--bad">⛔ {{ label }}</span>
+{% else %}
+  <span class="badge">{{ label }}</span>
+{% endif %}

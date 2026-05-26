@@ -1,10 +1,100 @@
 {% extends "transport/base.html" %}
-{% block title %}Formulaire expédition{% endblock %}
+{% block title %}{% if object %}Modifier {{ object.reference }}{% else %}Nouvelle expédition{% endif %} · Transport Console{% endblock %}
+
+{% block breadcrumb %}
+<nav class="breadcrumb" aria-label="Fil d'Ariane">
+  <a href="{% url 'home' %}">Accueil</a>
+  <span class="breadcrumb__sep">/</span>
+  <a href="{% url 'expedition_list' %}">Expéditions</a>
+  <span class="breadcrumb__sep">/</span>
+  <span>{% if object %}{{ object.reference }}{% else %}Nouvelle{% endif %}</span>
+</nav>
+{% endblock %}
+
 {% block content %}
-<form method="post">
+<div class="page-header">
+  <div>
+    <h2 class="page-header__title">
+      {% if object %}✏️ Modifier l'expédition{% else %}➕ Nouvelle expédition{% endif %}
+    </h2>
+    <div class="page-header__sub">
+      {% if object %}
+        Référence : <b>{{ object.reference }}</b>
+      {% else %}
+        La référence sera générée automatiquement (EXP-AAAA-NNNN).
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<form method="post" novalidate>
   {% csrf_token %}
-  {{ form.as_p }}
-  <button type="submit">Enregistrer</button>
-  <a href="{% url 'expedition_list' %}">Annuler</a>
+
+  {% if form.non_field_errors %}
+    <div class="alert alert--error">
+      <span>⛔</span>
+      <div>{{ form.non_field_errors }}</div>
+    </div>
+  {% endif %}
+
+  <div class="form-section">
+    <div class="form-section__title">Client</div>
+    <div class="form-grid">
+      <div class="form-row">
+        <label for="{{ form.client_nom.id_for_label }}">Nom du client</label>
+        {{ form.client_nom }}
+        {{ form.client_nom.errors }}
+      </div>
+      <div class="form-row">
+        <label for="{{ form.client_email.id_for_label }}">Email du client</label>
+        {{ form.client_email }}
+        {{ form.client_email.errors }}
+      </div>
+    </div>
+  </div>
+
+  <div class="form-section">
+    <div class="form-section__title">Trajet</div>
+    <div class="form-grid">
+      <div class="form-row">
+        <label for="{{ form.origine.id_for_label }}">Origine</label>
+        {{ form.origine }}
+        {{ form.origine.errors }}
+      </div>
+      <div class="form-row">
+        <label for="{{ form.destination.id_for_label }}">Destination</label>
+        {{ form.destination }}
+        {{ form.destination.errors }}
+      </div>
+    </div>
+  </div>
+
+  <div class="form-section">
+    <div class="form-section__title">Détails</div>
+    <div class="form-grid">
+      <div class="form-row">
+        <label for="{{ form.poids_kg.id_for_label }}">Poids (kg)</label>
+        {{ form.poids_kg }}
+        {{ form.poids_kg.errors }}
+      </div>
+      <div class="form-row">
+        <label for="{{ form.date_cible.id_for_label }}">Date cible (SLA)</label>
+        {{ form.date_cible }}
+        <span class="helptext">Date limite de livraison souhaitée.</span>
+        {{ form.date_cible.errors }}
+      </div>
+    </div>
+
+    <div class="form-row mt-16">
+      <label for="{{ form.description.id_for_label }}">Description</label>
+      {{ form.description }}
+      {{ form.description.errors }}
+    </div>
+  </div>
+
+  <div class="actions mt-24">
+    <button type="submit" class="btn">💾 Enregistrer</button>
+    <a class="btn btn--ghost" href="{% if object %}{% url 'expedition_detail' object.pk %}{% else %}{% url 'expedition_list' %}{% endif %}">Annuler</a>
+  </div>
 </form>
 {% endblock %}

@@ -1,0 +1,16 @@
+{% extends "transport/base.html" %}
+{% block title %}Page introuvable · Transport Console{% endblock %}
+
+{% block content %}
+<div class="empty">
+  <div class="empty__icon" style="font-size:64px;">🔍</div>
+  <h2>404 — Page introuvable</h2>
+  <p>La page demandée n'existe pas ou a été déplacée.</p>
+  {% if request_path %}
+    <p class="muted"><code>{{ request_path }}</code></p>
+  {% endif %}
+  <div class="actions" style="justify-content:center;">
+    <a class="btn" href="{% url 'home' %}">🏠 Retour à l'accueil</a>
+  </div>
+</div>
+{% endblock %}

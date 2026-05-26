@@ -1,13 +1,93 @@
 {% extends "transport/base.html" %}
-{% block title %}Accueil{% endblock %}
+{% block title %}Accueil · Transport Console{% endblock %}
 
 {% block content %}
-<h2>Accueil</h2>
-<p>Bienvenue sur le module Transport.</p>
+<section class="hero">
+  <h2>Pilotez vos expéditions en toute sérénité</h2>
+  <p>
+    Plateforme tout-en-un pour gérer vos commandes, planifier les livraisons,
+    suivre vos véhicules en temps réel et garder un œil sur vos indicateurs.
+  </p>
 
-<ul>
-  <li><a href="{% url 'expedition_list' %}">📦 Gestion des expéditions</a></li>
-  <li><a href="/admin/">🔐 Administration</a></li>
-  <li><a href="{% url 'dashboard' %}">📊 Dashboard (admin)</a></li>
-</ul>
+  <div class="actions" style="justify-content:center;">
+    {% if user.is_authenticated %}
+      {% if user.is_staff %}
+        <a class="btn" href="{% url 'dashboard' %}">📊 Ouvrir le dashboard</a>
+        <a class="btn btn--ghost" href="{% url 'expedition_list' %}">📦 Voir les expéditions</a>
+      {% else %}
+        <a class="btn" href="{% url 'client_commande_create' %}">➕ Nouvelle commande</a>
+        <a class="btn btn--ghost" href="{% url 'client_commandes' %}">👤 Mes commandes</a>
+      {% endif %}
+    {% else %}
+      <a class="btn" href="{% url 'login' %}">Se connecter</a>
+      <a class="btn btn--ghost" href="{% url 'suivi_expedition' %}">🔎 Suivre une expédition</a>
+    {% endif %}
+  </div>
+</section>
+
+<section class="grid grid-3 mt-24">
+  <div class="card">
+    <div class="feature-icon">📦</div>
+    <div class="card__title">Commandes simples</div>
+    <p class="muted" style="margin:6px 0 0 0;">
+      Vos clients passent commande en quelques clics : adresse, type de colis,
+      planification — et reçoivent une référence unique.
+    </p>
+  </div>
+
+  <div class="card">
+    <div class="feature-icon">🚚</div>
+    <div class="card__title">Livraisons planifiées</div>
+    <p class="muted" style="margin:6px 0 0 0;">
+      Affectez un véhicule disponible, démarrez et terminez chaque livraison
+      depuis la fiche expédition. Le statut suit automatiquement.
+    </p>
+  </div>
+
+  <div class="card">
+    <div class="feature-icon">📍</div>
+    <div class="card__title">Suivi temps réel</div>
+    <p class="muted" style="margin:6px 0 0 0;">
+      Vos clients voient la position du livreur sur une carte, mise à jour
+      automatiquement toutes les quelques secondes.
+    </p>
+  </div>
+
+  <div class="card">
+    <div class="feature-icon">📊</div>
+    <div class="card__title">Dashboard décisionnel</div>
+    <p class="muted" style="margin:6px 0 0 0;">
+      KPIs, répartitions par statut, créations par jour, top destinations :
+      tout ce qu'il faut pour piloter l'activité.
+    </p>
+  </div>
+
+  <div class="card">
+    <div class="feature-icon">⚠️</div>
+    <div class="card__title">Alertes SLA</div>
+    <p class="muted" style="margin:6px 0 0 0;">
+      Détection automatique des expéditions en retard ou en attente trop
+      longtemps, avec seuils configurables.
+    </p>
+  </div>
+
+  <div class="card">
+    <div class="feature-icon">🔐</div>
+    <div class="card__title">Rôles et permissions</div>
+    <p class="muted" style="margin:6px 0 0 0;">
+      Trois rôles cloisonnés : visiteur, client connecté, staff opérationnel.
+      Chaque action est protégée à son niveau.
+    </p>
+  </div>
+</section>
+
+{% if not user.is_authenticated %}
+  <div class="card card--accent mt-24 center">
+    <p style="margin:0;">
+      Vous avez déjà un compte ?
+      <a href="{% url 'login' %}" style="font-weight:600;">Connectez-vous</a>
+      pour accéder à votre espace.
+    </p>
+  </div>
+{% endif %}
 {% endblock %}

@@ -1,36 +1,50 @@
 {% extends "transport/base.html" %}
-{% block title %}Connexion{% endblock %}
+{% block title %}Connexion · Transport Console{% endblock %}
 
 {% block content %}
-<h2>Connexion</h2>
-<p class="muted">Connecte-toi pour accéder à ton espace client.</p>
-
-{% if form.errors %}
-  <div class="card" style="border-color: rgba(239,68,68,.55); background: rgba(239,68,68,.08);">
-    Identifiants incorrects. Réessaie.
+<div class="auth-card">
+  <div class="page-header" style="margin-bottom:8px;">
+    <div>
+      <h2 class="page-header__title">🔐 Connexion</h2>
+      <div class="page-header__sub">Accédez à votre espace client ou opérationnel.</div>
+    </div>
   </div>
-  <br>
-{% endif %}
 
-<form method="post">
-  {% csrf_token %}
-
-  <p>
-    <label for="id_username">Nom d’utilisateur</label><br>
-    {{ form.username }}
-  </p>
-
-  <p>
-    <label for="id_password">Mot de passe</label><br>
-    {{ form.password }}
-  </p>
-
-  <button type="submit">Se connecter</button>
-
-  <a class="chip" href="{% url 'home' %}" style="background:transparent;">Retour</a>
+  {% if form.errors %}
+    <div class="alert alert--error">
+      <span>⛔</span>
+      <span>Identifiants incorrects. Vérifie ton nom d'utilisateur et ton mot de passe.</span>
+    </div>
+  {% endif %}
 
   {% if next %}
-    <input type="hidden" name="next" value="{{ next }}">
+    <div class="alert alert--info">
+      <span>ℹ️</span>
+      <span>Connexion requise pour accéder à cette page.</span>
+    </div>
   {% endif %}
-</form>
+
+  <form method="post" novalidate>
+    {% csrf_token %}
+
+    <div class="form-row">
+      <label for="id_username">Nom d'utilisateur</label>
+      {{ form.username }}
+    </div>
+
+    <div class="form-row">
+      <label for="id_password">Mot de passe</label>
+      {{ form.password }}
+    </div>
+
+    {% if next %}
+      <input type="hidden" name="next" value="{{ next }}">
+    {% endif %}
+
+    <div class="actions mt-16">
+      <button type="submit" class="btn">Se connecter</button>
+      <a class="btn btn--ghost" href="{% url 'home' %}">Retour</a>
+    </div>
+  </form>
+</div>
 {% endblock %}

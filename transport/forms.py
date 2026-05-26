@@ -1,7 +1,12 @@
 from django import forms
 from .models import Expedition
 
+
 class ExpeditionForm(forms.ModelForm):
+    """Formulaire staff. Le champ ``statut`` n'est pas exposé : le cycle de vie
+    est piloté par le workflow (planification → démarrage → fin de livraison).
+    Pour une correction exceptionnelle, passer par l'admin Django."""
+
     class Meta:
         model = Expedition
         fields = [
@@ -11,7 +16,6 @@ class ExpeditionForm(forms.ModelForm):
             "destination",
             "poids_kg",
             "description",
-            "statut",
             "date_cible",
         ]
         widgets = {

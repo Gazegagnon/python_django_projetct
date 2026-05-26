@@ -1,31 +1,88 @@
 {% extends "transport/base.html" %}
-{% block title %}Suivi expédition{% endblock %}
+{% block title %}Suivi d'expédition · Transport Console{% endblock %}
+
+{% block breadcrumb %}
+<nav class="breadcrumb" aria-label="Fil d'Ariane">
+  <a href="{% url 'home' %}">Accueil</a>
+  <span class="breadcrumb__sep">/</span>
+  <span>Suivi</span>
+</nav>
+{% endblock %}
 
 {% block content %}
-<h2>Suivi d'expédition</h2>
+<div class="page-header">
+  <div>
+    <h2 class="page-header__title">🔎 Suivi d'expédition</h2>
+    <div class="page-header__sub">
+      Saisissez la référence communiquée à votre client pour consulter le statut public.
+    </div>
+  </div>
+</div>
 
-<form method="get">
-    <input type="text" name="reference" placeholder="EXP-2026-0001" value="{{ reference }}">
-    <button type="submit">Rechercher</button>
+<form method="get" class="card mb-16">
+  <div class="form-row">
+    <label for="id_reference">Référence de l'expédition</label>
+    <input type="text" id="id_reference" name="reference" value="{{ reference|default:'' }}"
+           placeholder="Ex : EXP-2026-0001" autocomplete="off">
+  </div>
+  <div class="actions mt-16">
+    <button type="submit" class="btn">Rechercher</button>
+    {% if reference %}
+      <a class="btn btn--ghost" href="{% url 'suivi_expedition' %}">Nouvelle recherche</a>
+    {% endif %}
+  </div>
 </form>
 
-{% if expedition %}
-    <h3>Expédition {{ expedition.reference }}</h3>
-    <p><b>Statut actuel :</b> {{ expedition.get_statut_display }}</p>
-    <p><b>Origine :</b> {{ expedition.origine }}</p>
-    <p><b>Destination :</b> {{ expedition.destination }}</p>
-
-    <h4>Historique</h4>
-    <ul>
-        {% for e in events %}
-            <li>
-                {{ e.date_event }} — {{ e.get_statut_display }}
-                {% if e.commentaire %} ({{ e.commentaire }}) {% endif %}
-            </li>
-        {% empty %}
-            <li>Aucun événement enregistré.</li>
-        {% endfor %}
-    </ul>
+{% if reference and not expedition %}
+  <div class="alert alert--warning">
+    <span>⚠️</span>
+    <span>Aucune expédition trouvée pour la référence <b>{{ reference }}</b>.</span>
+  </div>
 {% endif %}
 
+{% if expedition %}
+  <div class="grid grid-2" style="align-items:start;">
+    <section class="card">
+      <h3 class="card__title">Expédition {{ expedition.reference }}</h3>
+      <dl class="dl-grid mt-8">
+        <dt>Statut</dt>
+        <dd>{% include "transport/_statut_badge.html" with statut=expedition.statut label=expedition.get_statut_display %}</dd>
+        <dt>Origine</dt>
+        <dd>{{ expedition.origine }}</dd>
+        <dt>Destination</dt>
+        <dd>{{ expedition.destination }}</dd>
+        <dt>Créée le</dt>
+        <dd>{{ expedition.date_creation|date:"d/m/Y H:i" }}</dd>
+        {% if expedition.date_cible %}
+          <dt>Date cible</dt>
+          <dd>{{ expedition.date_cible|date:"d/m/Y" }}</dd>
+        {% endif %}
+      </dl>
+    </section>
+
+    <section class="card">
+      <h3 class="card__title">🕓 Historique</h3>
+      {% if events %}
+        <ul class="timeline mt-8">
+          {% for ev in events %}
+            <li class="timeline__item">
+              <span class="timeline__dot"></span>
+              <div>
+                <div>
+                  {% include "transport/_statut_badge.html" with statut=ev.statut label=ev.get_statut_display %}
+                  <span class="muted" style="margin-left:6px;">{{ ev.date_event|date:"d/m/Y H:i" }}</span>
+                </div>
+                {% if ev.commentaire %}
+                  <div style="margin-top:4px;">{{ ev.commentaire }}</div>
+                {% endif %}
+              </div>
+            </li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <p class="muted">Aucun événement enregistré.</p>
+      {% endif %}
+    </section>
+  </div>
+{% endif %}
 {% endblock %}

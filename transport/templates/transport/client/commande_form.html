@@ -1,12 +1,124 @@
 {% extends "transport/base.html" %}
-{% block title %}Commande{% endblock %}
-{% block content %}
-<h2>{% if expedition %}Modifier la commande{% else %}Nouvelle commande{% endif %}</h2>
+{% block title %}{% if expedition %}Modifier {{ expedition.reference }}{% else %}Nouvelle commande{% endif %} · Transport Console{% endblock %}
 
-<form method="post">
+{% block breadcrumb %}
+<nav class="breadcrumb" aria-label="Fil d'Ariane">
+  <a href="{% url 'home' %}">Accueil</a>
+  <span class="breadcrumb__sep">/</span>
+  <a href="{% url 'client_commandes' %}">Mes commandes</a>
+  <span class="breadcrumb__sep">/</span>
+  {% if expedition %}
+    <a href="{% url 'client_commande_detail' expedition.reference %}">{{ expedition.reference }}</a>
+    <span class="breadcrumb__sep">/</span>
+    <span>Modifier</span>
+  {% else %}
+    <span>Nouvelle commande</span>
+  {% endif %}
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h2 class="page-header__title">
+      {% if expedition %}✏️ Modifier ma commande{% else %}➕ Nouvelle commande{% endif %}
+    </h2>
+    <div class="page-header__sub">
+      {% if expedition %}
+        Référence : <b>{{ expedition.reference }}</b>
+      {% else %}
+        Renseignez les informations de livraison pour créer votre commande.
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<form method="post" novalidate>
   {% csrf_token %}
-  {{ form.as_p }}
-  <button type="submit">Enregistrer</button>
-  <a class="chip" href="{% url 'client_commandes' %}" style="background:transparent;">Annuler</a>
+
+  {% if form.non_field_errors %}
+    <div class="alert alert--error"><span>⛔</span><div>{{ form.non_field_errors }}</div></div>
+  {% endif %}
+
+  {% if form.client_nom %}
+    <div class="form-section">
+      <div class="form-section__title">Coordonnées</div>
+      <div class="form-grid">
+        <div class="form-row">
+          <label for="{{ form.client_nom.id_for_label }}">Nom complet</label>
+          {{ form.client_nom }}
+          {{ form.client_nom.errors }}
+        </div>
+        <div class="form-row">
+          <label for="{{ form.client_email.id_for_label }}">Email</label>
+          {{ form.client_email }}
+          {{ form.client_email.errors }}
+        </div>
+      </div>
+    </div>
+  {% endif %}
+
+  <div class="form-section">
+    <div class="form-section__title">Trajet</div>
+    <div class="form-grid">
+      <div class="form-row">
+        <label for="{{ form.pickup_adresse.id_for_label }}">Adresse de retrait</label>
+        {{ form.pickup_adresse }}
+        {{ form.pickup_adresse.errors }}
+      </div>
+      <div class="form-row">
+        <label for="{{ form.dropoff_adresse.id_for_label }}">Adresse de livraison</label>
+        {{ form.dropoff_adresse }}
+        {{ form.dropoff_adresse.errors }}
+      </div>
+      <div class="form-row">
+        <label for="{{ form.origine.id_for_label }}">Ville de départ</label>
+        {{ form.origine }}
+        {{ form.origine.errors }}
+      </div>
+      <div class="form-row">
+        <label for="{{ form.destination.id_for_label }}">Ville d'arrivée</label>
+        {{ form.destination }}
+        {{ form.destination.errors }}
+      </div>
+    </div>
+  </div>
+
+  <div class="form-section">
+    <div class="form-section__title">Colis</div>
+    <div class="form-grid">
+      <div class="form-row">
+        <label for="{{ form.type_colis.id_for_label }}">Type de colis</label>
+        {{ form.type_colis }}
+        {{ form.type_colis.errors }}
+      </div>
+      <div class="form-row">
+        <label for="{{ form.poids_kg.id_for_label }}">Poids (kg)</label>
+        {{ form.poids_kg }}
+        {{ form.poids_kg.errors }}
+      </div>
+    </div>
+    <div class="form-row mt-16">
+      <label for="{{ form.instructions.id_for_label }}">Instructions</label>
+      {{ form.instructions }}
+      <span class="helptext">Code d'accès, étage, contact sur place, fragilité…</span>
+      {{ form.instructions.errors }}
+    </div>
+  </div>
+
+  <div class="form-section">
+    <div class="form-section__title">Planification</div>
+    <div class="form-row">
+      <label for="{{ form.planifiee_pour.id_for_label }}">Date / heure souhaitées</label>
+      {{ form.planifiee_pour }}
+      <span class="helptext">Laissez vide pour une livraison dès que possible.</span>
+      {{ form.planifiee_pour.errors }}
+    </div>
+  </div>
+
+  <div class="actions mt-24">
+    <button type="submit" class="btn">💾 Enregistrer</button>
+    <a class="btn btn--ghost" href="{% if expedition %}{% url 'client_commande_detail' expedition.reference %}{% else %}{% url 'client_commandes' %}{% endif %}">Annuler</a>
+  </div>
 </form>
 {% endblock %}

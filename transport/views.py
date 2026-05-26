@@ -1,42 +1,51 @@
 from datetime import timedelta
 import json
 
+from django.contrib import messages
 from django.contrib.admin.views.decorators import staff_member_required
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
+from django.core.paginator import Paginator
 from django.db.models import Count
 from django.db.models.functions import TruncDate
-from django.shortcuts import render, get_object_or_404
+from django.http import HttpResponseForbidden, JsonResponse
+from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse_lazy
 from django.utils import timezone
-from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView
+from django.views.decorators.http import require_POST
+from django.views.generic import (
+    CreateView,
+    DeleteView,
+    DetailView,
+    ListView,
+    UpdateView,
+)
 
-from django.contrib.auth.decorators import login_required
-from django.http import HttpResponseForbidden
 from .client_forms import ClientCommandeCreateForm, ClientCommandeUpdateForm
-
 from .forms import ExpeditionForm
-from .models import Expedition
-
-from django.shortcuts import redirect
-from .models import Livraison, Vehicule, TrackingEvent
 from .livraison_forms import PlanifierLivraisonForm
+from .models import Expedition, Livraison, TrackingEvent, Vehicule
 
-from django.http import JsonResponse
-from django.contrib import messages
-from django.shortcuts import redirect, get_object_or_404
+
+class StaffRequiredMixin(LoginRequiredMixin, UserPassesTestMixin):
+    """Restreint l'accès aux membres du staff (compatible avec les CBV)."""
+
+    def test_func(self):
+        return self.request.user.is_active and self.request.user.is_staff
 
 
 def home(request):
     return render(request, "transport/home.html")
 
 
-class ExpeditionListView(ListView):
+class ExpeditionListView(StaffRequiredMixin, ListView):
     model = Expedition
     template_name = "transport/expedition_list.html"
     context_object_name = "expeditions"
     paginate_by = 10
 
     def get_queryset(self):
-        qs = super().get_queryset()
+        qs = super().get_queryset().select_related("client_user", "livraison__vehicule")
         q = self.request.GET.get("q")
         statut = self.request.GET.get("statut")
         if q:
@@ -45,28 +54,46 @@ class ExpeditionListView(ListView):
             qs = qs.filter(statut=statut)
         return qs
 
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        params = self.request.GET.copy()
+        params.pop("page", None)
+        ctx["querystring"] = params.urlencode()
+        ctx["current_q"] = self.request.GET.get("q", "")
+        ctx["current_statut"] = self.request.GET.get("statut", "")
+        ctx["statut_choices"] = Expedition.Statut.choices
+        return ctx
 
-class ExpeditionDetailView(DetailView):
+
+class ExpeditionDetailView(StaffRequiredMixin, DetailView):
     model = Expedition
     template_name = "transport/expedition_detail.html"
     context_object_name = "expedition"
 
+    def get_queryset(self):
+        return super().get_queryset().select_related("client_user", "livraison__vehicule")
 
-class ExpeditionCreateView(CreateView):
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        ctx["events"] = self.object.events.all()
+        return ctx
+
+
+class ExpeditionCreateView(StaffRequiredMixin, CreateView):
     model = Expedition
     form_class = ExpeditionForm
     template_name = "transport/expedition_form.html"
     success_url = reverse_lazy("expedition_list")
 
 
-class ExpeditionUpdateView(UpdateView):
+class ExpeditionUpdateView(StaffRequiredMixin, UpdateView):
     model = Expedition
     form_class = ExpeditionForm
     template_name = "transport/expedition_form.html"
     success_url = reverse_lazy("expedition_list")
 
 
-class ExpeditionDeleteView(DeleteView):
+class ExpeditionDeleteView(StaffRequiredMixin, DeleteView):
     model = Expedition
     template_name = "transport/expedition_confirm_delete.html"
     success_url = reverse_lazy("expedition_list")
@@ -91,11 +118,13 @@ def suivi_expedition(request):
         },
     )
 
+@login_required
 def expedition_position(request, reference):
     exp = get_object_or_404(Expedition, reference=reference)
 
-    # sécurité simple : si exp appartient à un client_user, on restreint à lui (ou staff)
-    if exp.client_user_id and (not request.user.is_authenticated or (request.user != exp.client_user and not request.user.is_staff)):
+    is_staff = request.user.is_staff
+    is_owner = exp.client_user_id is not None and exp.client_user_id == request.user.id
+    if not (is_staff or is_owner):
         return JsonResponse({"detail": "Forbidden"}, status=403)
 
     liv = getattr(exp, "livraison", None)
@@ -298,10 +327,23 @@ def planifier_livraison(request, pk):
 
     return render(request, "transport/planifier_livraison.html", {"expedition": expedition, "form": form})
 
+CLIENT_PAGE_SIZE = 10
+
+
 @login_required
 def client_commandes(request):
-    qs = Expedition.objects.filter(client_user=request.user).order_by("-date_creation")
-    return render(request, "transport/client/commandes_list.html", {"expeditions": qs})
+    qs = (
+        Expedition.objects
+        .filter(client_user=request.user)
+        .select_related("livraison__vehicule")
+        .order_by("-date_creation")
+    )
+    page_obj = Paginator(qs, CLIENT_PAGE_SIZE).get_page(request.GET.get("page"))
+    return render(
+        request,
+        "transport/client/commandes_list.html",
+        {"expeditions": page_obj, "page_obj": page_obj, "is_paginated": page_obj.has_other_pages()},
+    )
 
 
 @login_required
@@ -336,45 +378,46 @@ def client_commande_create(request):
 
 @login_required
 def client_commande_detail(request, reference):
-    exp = get_object_or_404(Expedition, reference=reference, client_user=request.user)
+    exp = get_object_or_404(
+        Expedition.objects.select_related("livraison__vehicule"),
+        reference=reference,
+        client_user=request.user,
+    )
     events = exp.events.all()
     return render(request, "transport/client/commande_detail.html", {"expedition": exp, "events": events})
+
+
+def _restrict_to_instructions(form):
+    """Désactive tous les champs sauf 'instructions' (utilisé quand EN_COURS)."""
+    allowed = {"instructions"}
+    for name, field in form.fields.items():
+        if name not in allowed:
+            field.disabled = True
 
 
 @login_required
 def client_commande_update(request, reference):
     exp = get_object_or_404(Expedition, reference=reference, client_user=request.user)
 
-    # Règles simples
     if exp.statut not in (Expedition.Statut.EN_ATTENTE, Expedition.Statut.EN_COURS):
         return HttpResponseForbidden("Commande non modifiable à ce stade.")
 
     if request.method == "POST":
         form = ClientCommandeUpdateForm(request.POST, instance=exp)
-
-        # Si EN_COURS, on limite à instructions uniquement (tu peux enlever ce bloc si tu veux)
-        if exp.statut == Expedition.Statut.EN_COURS:
-            allowed = {"instructions"}
-            for name, field in form.fields.items():
-                if name not in allowed:
-                    field.disabled = True
-
-        if form.is_valid():
-            updated = form.save()
-
-            TrackingEvent.objects.create(
-                expedition=updated,
-                statut=updated.statut,
-                commentaire="Commande modifiée par le client."
-            )
-            return redirect("client_commande_detail", reference=updated.reference)
     else:
         form = ClientCommandeUpdateForm(instance=exp)
-        if exp.statut == Expedition.Statut.EN_COURS:
-            allowed = {"instructions"}
-            for name, field in form.fields.items():
-                if name not in allowed:
-                    field.disabled = True
+
+    if exp.statut == Expedition.Statut.EN_COURS:
+        _restrict_to_instructions(form)
+
+    if request.method == "POST" and form.is_valid():
+        updated = form.save()
+        TrackingEvent.objects.create(
+            expedition=updated,
+            statut=updated.statut,
+            commentaire="Commande modifiée par le client.",
+        )
+        return redirect("client_commande_detail", reference=updated.reference)
 
     return render(request, "transport/client/commande_form.html", {"form": form, "expedition": exp})
 
@@ -401,6 +444,7 @@ def client_commande_cancel(request, reference):
 
     return render(request, "transport/client/commande_cancel.html", {"expedition": exp})
 
+@require_POST
 @staff_member_required
 def livraison_start(request, pk):
     expedition = get_object_or_404(Expedition, pk=pk)
@@ -430,6 +474,7 @@ def livraison_start(request, pk):
     return redirect("expedition_detail", pk=pk)
 
 
+@require_POST
 @staff_member_required
 def livraison_finish(request, pk):
     expedition = get_object_or_404(Expedition, pk=pk)
@@ -457,17 +502,27 @@ def livraison_finish(request, pk):
 
 @login_required
 def client_historique(request):
-    qs = Expedition.objects.filter(
-        client_user=request.user,
-        statut__in=[Expedition.Statut.LIVREE, Expedition.Statut.ANNULEE]
-    ).order_by("-date_maj")
-    return render(request, "transport/client/historique.html", {"expeditions": qs})
+    qs = (
+        Expedition.objects
+        .filter(
+            client_user=request.user,
+            statut__in=[Expedition.Statut.LIVREE, Expedition.Statut.ANNULEE],
+        )
+        .order_by("-date_maj")
+    )
+    page_obj = Paginator(qs, CLIENT_PAGE_SIZE).get_page(request.GET.get("page"))
+    return render(
+        request,
+        "transport/client/historique.html",
+        {"expeditions": page_obj, "page_obj": page_obj, "is_paginated": page_obj.has_other_pages()},
+    )
 
+
+@require_POST
 @staff_member_required
 def livraison_set_position_demo(request, pk):
     expedition = get_object_or_404(Expedition, pk=pk)
 
-    # Si pas de livraison, on renvoie vers la page de planification
     if not hasattr(expedition, "livraison"):
         return redirect("planifier_livraison", pk=pk)
 
