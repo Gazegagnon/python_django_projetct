@@ -1,14 +1,10 @@
-{% extends "transport/base.html" %}
+{% extends "registration/auth_base.html" %}
 {% block title %}Déconnecté · Transport Console{% endblock %}
 
 {% block content %}
 <div class="auth-card center">
-  <h2>👋 À bientôt</h2>
-  <p class="muted">Vous êtes maintenant déconnecté.</p>
-
-  <div class="actions" style="justify-content:center;">
-    <a class="btn" href="{% url 'login' %}">Se reconnecter</a>
-    <a class="btn btn--ghost" href="{% url 'home' %}">Retour à l'accueil</a>
-  </div>
+  <h2 class="auth-card__title">À bientôt</h2>
+  <p class="muted">Vous êtes déconnecté.</p>
+  <a class="btn btn--block mt-16" href="{% url 'login' %}">Se reconnecter</a>
 </div>
 {% endblock %}

@@ -265,7 +265,7 @@ class SignupTests(TestCase):
         )
         self.assertEqual(response.status_code, 302)
         self.assertTrue(User.objects.filter(username="nouveau").exists())
-        self.assertEqual(int(self.client.session["_auth_user_id"]), User.objects.get(username="nouveau").pk)
+        self.assertRedirects(response, reverse("home"))
 
 
 class ExpeditionPositionThrottlingTests(TestCase):

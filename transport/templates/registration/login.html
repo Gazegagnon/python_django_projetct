@@ -1,30 +1,24 @@
-{% extends "transport/base.html" %}
+{% extends "registration/auth_base.html" %}
 {% block title %}Connexion · Transport Console{% endblock %}
 
 {% block content %}
 <div class="auth-card">
-  <div class="page-header" style="margin-bottom:8px;">
-    <div>
-      <h2 class="page-header__title">🔐 Connexion</h2>
-      <div class="page-header__sub">Accédez à votre espace client ou opérationnel.</div>
-    </div>
-  </div>
+  <h2 class="auth-card__title">Connexion</h2>
+  <p class="auth-card__sub muted">Accédez à votre espace.</p>
 
   {% if form.errors %}
-    <div class="alert alert--error">
-      <span>⛔</span>
-      <span>Identifiants incorrects. Vérifie ton nom d'utilisateur et ton mot de passe.</span>
+    <div class="alert alert--error mt-16">
+      <span>Identifiants incorrects.</span>
     </div>
   {% endif %}
 
   {% if next %}
-    <div class="alert alert--info">
-      <span>ℹ️</span>
+    <div class="alert alert--info mt-16">
       <span>Connexion requise pour accéder à cette page.</span>
     </div>
   {% endif %}
 
-  <form method="post" novalidate>
+  <form method="post" novalidate class="mt-16">
     {% csrf_token %}
 
     <div class="form-row">
@@ -41,13 +35,10 @@
       <input type="hidden" name="next" value="{{ next }}">
     {% endif %}
 
-    <div class="actions mt-16">
-      <button type="submit" class="btn">Se connecter</button>
-      <a class="btn btn--ghost" href="{% url 'home' %}">Retour</a>
-    </div>
+    <button type="submit" class="btn btn--block mt-16">Se connecter</button>
   </form>
 
-  <p class="muted mt-16" style="font-size:13px;">
+  <p class="auth-card__links muted">
     <a href="{% url 'password_reset' %}">Mot de passe oublié ?</a>
     · <a href="{% url 'signup' %}">Créer un compte</a>
   </p>

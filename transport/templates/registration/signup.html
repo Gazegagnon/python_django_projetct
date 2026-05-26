@@ -1,16 +1,13 @@
-{% extends "transport/base.html" %}
+{% extends "registration/auth_base.html" %}
+{% block auth_body_class %}auth-body--signup{% endblock %}
 {% block title %}Inscription · Transport Console{% endblock %}
 
 {% block content %}
 <div class="auth-card">
-  <div class="page-header" style="margin-bottom:8px;">
-    <div>
-      <h2 class="page-header__title">Créer un compte</h2>
-      <div class="page-header__sub">Accédez à votre espace client pour passer des commandes.</div>
-    </div>
-  </div>
+  <h2 class="auth-card__title">Créer un compte</h2>
+  <p class="auth-card__sub muted">Espace client pour passer vos commandes.</p>
 
-  <form method="post" novalidate data-loading>
+  <form method="post" novalidate class="mt-16" data-loading>
     {% csrf_token %}
     {% for field in form %}
       <div class="form-row">
@@ -20,10 +17,11 @@
         {% if field.help_text %}<span class="helptext">{{ field.help_text }}</span>{% endif %}
       </div>
     {% endfor %}
-    <div class="actions mt-16">
-      <button type="submit" class="btn">S'inscrire</button>
-      <a class="btn btn--ghost" href="{% url 'login' %}">Déjà un compte ?</a>
-    </div>
+    <button type="submit" class="btn btn--block mt-16">S'inscrire</button>
   </form>
+
+  <p class="auth-card__links muted">
+    <a href="{% url 'login' %}">Déjà un compte ? Se connecter</a>
+  </p>
 </div>
 {% endblock %}

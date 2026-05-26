@@ -12,7 +12,7 @@
   <div class="actions" style="justify-content:center;">
     {% if user.is_authenticated %}
       {% if user.is_staff %}
-        <a class="btn" href="{% url 'dashboard' %}">📊 Ouvrir le dashboard</a>
+        <a class="btn" href="{% url 'dashboard_overview' %}">📊 Ouvrir le dashboard</a>
         <a class="btn btn--ghost" href="{% url 'expedition_list' %}">📦 Voir les expéditions</a>
       {% else %}
         <a class="btn" href="{% url 'client_commande_create' %}">➕ Nouvelle commande</a>
@@ -26,61 +26,63 @@
   </div>
 </section>
 
+{% if user.is_staff or not user.is_authenticated %}
 <section class="grid grid-3 mt-24">
-  <div class="card">
+  <a class="card card--clickable" href="{% if user.is_staff %}{% url 'expedition_list' %}{% else %}{% url 'signup' %}{% endif %}">
     <div class="feature-icon">📦</div>
     <div class="card__title">Commandes simples</div>
     <p class="muted" style="margin:6px 0 0 0;">
       Vos clients passent commande en quelques clics : adresse, type de colis,
       planification — et reçoivent une référence unique.
     </p>
-  </div>
+  </a>
 
-  <div class="card">
+  <a class="card card--clickable" href="{% if user.is_staff %}{% url 'vehicule_list' %}{% else %}{% url 'login' %}{% endif %}">
     <div class="feature-icon">🚚</div>
     <div class="card__title">Livraisons planifiées</div>
     <p class="muted" style="margin:6px 0 0 0;">
       Affectez un véhicule disponible, démarrez et terminez chaque livraison
       depuis la fiche expédition. Le statut suit automatiquement.
     </p>
-  </div>
+  </a>
 
-  <div class="card">
+  <a class="card card--clickable" href="{% url 'suivi_expedition' %}">
     <div class="feature-icon">📍</div>
     <div class="card__title">Suivi temps réel</div>
     <p class="muted" style="margin:6px 0 0 0;">
       Vos clients voient la position du livreur sur une carte, mise à jour
       automatiquement toutes les quelques secondes.
     </p>
-  </div>
+  </a>
 
-  <div class="card">
+  <a class="card card--clickable" href="{% if user.is_staff %}{% url 'dashboard_overview' %}{% else %}{% url 'login' %}{% endif %}">
     <div class="feature-icon">📊</div>
     <div class="card__title">Dashboard décisionnel</div>
     <p class="muted" style="margin:6px 0 0 0;">
       KPIs, répartitions par statut, créations par jour, top destinations :
       tout ce qu'il faut pour piloter l'activité.
     </p>
-  </div>
+  </a>
 
-  <div class="card">
+  <a class="card card--clickable" href="{% if user.is_staff %}{% url 'dashboard_alertes' %}{% else %}{% url 'login' %}{% endif %}">
     <div class="feature-icon">⚠️</div>
     <div class="card__title">Alertes SLA</div>
     <p class="muted" style="margin:6px 0 0 0;">
       Détection automatique des expéditions en retard ou en attente trop
       longtemps, avec seuils configurables.
     </p>
-  </div>
+  </a>
 
-  <div class="card">
-    <div class="feature-icon">🔐</div>
-    <div class="card__title">Rôles et permissions</div>
+  <a class="card card--clickable" href="{% if user.is_staff %}{% url 'notifications_list' %}{% else %}{% url 'login' %}{% endif %}">
+    <div class="feature-icon">🔔</div>
+    <div class="card__title">Notifications</div>
     <p class="muted" style="margin:6px 0 0 0;">
-      Trois rôles cloisonnés : visiteur, client connecté, staff opérationnel.
-      Chaque action est protégée à son niveau.
+      Alertes in-app pour le staff et les clients : planification, livraison,
+      messages et avis en temps réel.
     </p>
-  </div>
+  </a>
 </section>
+{% endif %}
 
 {% if not user.is_authenticated %}
   <div class="card card--accent mt-24 center">

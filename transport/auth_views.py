@@ -10,7 +10,7 @@ from .client_forms import SignupForm
 class SignupView(CreateView):
     form_class = SignupForm
     template_name = "registration/signup.html"
-    success_url = reverse_lazy("client_commandes")
+    success_url = reverse_lazy("home")
 
     def form_valid(self, form):
         response = super().form_valid(form)

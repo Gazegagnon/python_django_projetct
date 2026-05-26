@@ -1,0 +1,42 @@
+{% load static %}<!doctype html>
+<html lang="fr" data-theme="light">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>{% block title %}Transport Console{% endblock %}</title>
+  <link rel="stylesheet" href="{% static 'css/app.css' %}">
+  <script>
+    (function () {
+      try {
+        const saved = localStorage.getItem("theme");
+        if (saved) document.documentElement.setAttribute("data-theme", saved);
+      } catch (e) {}
+    })();
+  </script>
+</head>
+<body class="auth-body {% block auth_body_class %}{% endblock %}">
+  <div class="auth-layout">
+    <header class="auth-layout__header">
+      <a class="auth-layout__brand" href="{% url 'home' %}">🚚 Transport Console</a>
+    </header>
+
+    <main class="auth-layout__main">
+      {% if messages %}
+        <ul class="messages">
+          {% for message in messages %}
+            <li class="alert alert--{{ message.tags|default:'info' }}">
+              <span>{{ message }}</span>
+            </li>
+          {% endfor %}
+        </ul>
+      {% endif %}
+      {% block content %}{% endblock %}
+    </main>
+
+    <footer class="auth-layout__footer muted">
+      <a href="{% url 'home' %}">← Retour à l'accueil</a>
+    </footer>
+  </div>
+  <script src="{% static 'js/app.js' %}"></script>
+</body>
+</html>

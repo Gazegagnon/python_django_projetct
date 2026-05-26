@@ -142,7 +142,7 @@ CACHES = {
 # Authentification
 # ---------------------------------------------------------------------------
 LOGIN_URL = "/accounts/login/"
-LOGIN_REDIRECT_URL = "/client/commandes/"
+LOGIN_REDIRECT_URL = "/"
 LOGOUT_REDIRECT_URL = "/"
 
 
