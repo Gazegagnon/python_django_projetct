@@ -12,8 +12,6 @@ temps réel. Trois rôles cloisonnés : **visiteur**, **client connecté** et
 - [Stack technique](#stack-technique)
 - [Installation](#installation)
 - [Lancement](#lancement)
-- [Comptes de démo](#comptes-de-démo)
-- [Variables d'environnement](#variables-denvironnement)
 - [Tests](#tests)
 - [Structure du projet](#structure-du-projet)
 - [Spécifications des pages](#spécifications-des-pages)
@@ -69,13 +67,10 @@ python -m venv venv
 # 3. Installer les dépendances
 pip install -r requirements.txt
 
-# 4. (Optionnel) Configurer les variables d'environnement
-copy .env.example .env        # éditer ensuite .env
-
-# 5. Appliquer les migrations
+# 4. Appliquer les migrations
 python manage.py migrate
 
-# 6. Créer un superuser
+# 5. Créer un superuser
 python manage.py createsuperuser
 ```
 
@@ -86,40 +81,6 @@ python manage.py runserver
 ```
 
 Application disponible sur http://127.0.0.1:8000/.
-
-## Comptes de démo
-
-Le projet est fourni avec deux comptes de démonstration créés via le shell :
-
-```powershell
-python manage.py shell -c "from django.contrib.auth import get_user_model; U=get_user_model(); a,_=U.objects.get_or_create(username='admin', defaults={'is_staff':True,'is_superuser':True,'email':'admin@example.com'}); a.is_staff=True; a.is_superuser=True; a.set_password('admin12345!'); a.save(); c,_=U.objects.get_or_create(username='client', defaults={'email':'client@example.com'}); c.set_password('client12345!'); c.save()"
-```
-
-| Rôle | Login | Mot de passe |
-|---|---|---|
-| Staff / superuser | `admin` | `admin12345!` |
-| Client | `client` | `client12345!` |
-
-## Variables d'environnement
-
-Toutes les variables sensibles sont externalisées. Voir `.env.example` pour
-la liste complète.
-
-| Variable | Défaut | Rôle |
-|---|---|---|
-| `DJANGO_SECRET_KEY` | clé dev (insecure) | Clé secrète Django |
-| `DJANGO_DEBUG` | `true` | Active le mode debug |
-| `DJANGO_ALLOWED_HOSTS` | `localhost,127.0.0.1` | Hôtes autorisés (CSV) |
-| `DJANGO_CSRF_TRUSTED_ORIGINS` | _(vide)_ | Origines CSRF de confiance |
-| `DJANGO_SECURE_SSL_REDIRECT` | `true` | Force HTTPS en prod |
-| `DJANGO_EMAIL_BACKEND` | `console` (dev) / `smtp` (prod) | Backend email |
-| `EMAIL_HOST` / `EMAIL_PORT` / `EMAIL_HOST_USER` / `EMAIL_HOST_PASSWORD` | — | Config SMTP |
-| `DEFAULT_FROM_EMAIL` | `Transport Console <no-reply@transport.local>` | Expéditeur |
-| `DJANGO_ADMINS` | _(vide)_ | Format `Nom\|email`, séparés par `,` |
-
-> Quand `DEBUG=False`, le module `settings.py` active automatiquement :
-> `SECURE_SSL_REDIRECT`, `SECURE_HSTS_*`, `SESSION_COOKIE_SECURE`,
-> `CSRF_COOKIE_SECURE`, `X_FRAME_OPTIONS=DENY`, etc.
 
 ## Tests
 
